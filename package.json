@@ -2,7 +2,11 @@
   "name": "stellar-turing-server",
   "private": true,
   "scripts": {
-    "dev": "npx sls offline --service turing-signing-server-0",
+    "dev-0": "npx sls offline --service turing-signing-server-0",
+    "dev-1": "npx sls offline --service turing-signing-server-1",
+    "dev-2": "npx sls offline --service turing-signing-server-2",
+    "dev-3": "npx sls offline --service turing-signing-server-3",
+    "dev-4": "npx sls offline --service turing-signing-server-4",
     "deploy-0": "npx sls deploy --service turing-signing-server-0",
     "deploy-1": "npx sls deploy --service turing-signing-server-1",
     "deploy-2": "npx sls deploy --service turing-signing-server-2",
@@ -32,17 +36,16 @@
     "webpack-node-externals": "^1.7.2"
   },
   "dependencies": {
+    "@middy/core": "^1.0.0",
+    "@middy/http-header-normalizer": "^1.0.0",
+    "@middy/http-multipart-body-parser": "^1.0.0",
     "aws-sdk": "^2.664.0",
     "axios": "^0.19.2",
     "bluebird": "^3.7.2",
-    "body-parser": "^1.19.0",
-    "express": "^4.17.1",
     "lodash": "^4.17.15",
-    "multer": "^1.4.2",
     "pg": "^8.0.3",
     "require-from-string": "^2.0.2",
-    "serverless-http": "^2.3.2",
     "source-map-support": "^0.5.19",
-    "stellar-sdk": "^4.1.0"
+    "stellar-sdk": "^5.0.0"
   }
 }

@@ -59,6 +59,21 @@ functions:
           method: POST
           cors: true
 
+  updateContract:
+    handler: src/updateContract.default
+    environment: ${file(env.yml)}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:PutObjectTagging
+        Resource: arn:aws:s3:::${opt:service}/*
+    timeout: 6
+    events:
+      - http:
+          path: contract/{hash}
+          method: PUT
+          cors: true
+
   getContract:
     handler: src/getContract.default
     environment: ${file(env.yml)}

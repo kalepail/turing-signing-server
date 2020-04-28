@@ -1,6 +1,8 @@
 import AWS from 'aws-sdk'
 import Promise from 'bluebird'
 import { Keypair, Networks, Transaction } from 'stellar-sdk'
+import axios from 'axios'
+import { map } from 'lodash'
 
 import lambda from './js/lambda'
 import { headers, parseError } from './js/utils'
@@ -16,12 +18,23 @@ export default async (event, context, callback) => {
   context.callbackWaitsForEmptyEventLoop = false
 
   try {
-    const params = {
+    const s3Contract = await s3.getObject({
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: event.pathParameters.hash,
-    }
+    }).promise()
 
-    const s3Contract = await s3.getObject(params).promise()
+    const contractTurrets = await s3.getObjectTagging({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: event.pathParameters.hash,
+    }).promise()
+    .then(({TagSet}) => map(TagSet, (tag) => Buffer.from(tag.Value, 'base64').toString('utf8')))
+
+    const turretsContractData = await Promise.map(contractTurrets, async (turret) =>
+      axios.get(`${turret}/contract/${event.pathParameters.hash}`)
+      .then(({data}) => data)
+      .catch(() => null) // Don't error out if a turingSigningServer request fails
+    )
+
     const signerSecret = await Pool.query(`
       SELECT signer FROM contracts
       WHERE contract = '${event.pathParameters.hash}'
@@ -45,10 +58,12 @@ export default async (event, context, callback) => {
       LogType: 'None',
       Payload: JSON.stringify({
         script: s3Contract.Body.toString('utf8'),
-        body: JSON.parse(event.body)
+        body: {
+          request: JSON.parse(event.body),
+          turrets: turretsContractData
+        }
       })
-    })
-    .promise()
+    }).promise()
     .then(({Payload}) => Payload)
 
     const transaction = new Transaction(xdr, Networks[process.env.STELLAR_NETWORK])
@@ -59,6 +74,7 @@ export default async (event, context, callback) => {
       statusCode: 200,
       body: JSON.stringify({
         xdr,
+        signer: signerKeypair.publicKey(),
         signature
       })
     }

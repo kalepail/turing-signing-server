@@ -9,41 +9,47 @@ const vault = 'GBHKNCNOMBHHLHBLUTGUSKJPTHDQGJQLAICXFE4SMFAKOO5WO54BJJOR'
 const XLM = Asset.native()
 const TYLERCOIN = new Asset('TYLERCOIN', contract)
 
-console.log('child env', process.env)
+// 'https://aefrqlrkb3.execute-api.us-east-1.amazonaws.com/dev,https://ajhwq8wzwa.execute-api.us-east-1.amazonaws.com/dev,https://a9rw0d7djl.execute-api.us-east-1.amazonaws.com/dev,https://qt8bahr41a.execute-api.us-east-1.amazonaws.com/dev,https://tx4qxpecmi.execute-api.us-east-1.amazonaws.com/dev'
 
 // Ensure fees are acceptable (public contract could have raised them)
 
-export default async ({request, signers}) => {
-  const transaction = await server
-  .loadAccount(request.source)
-  .then((account) =>
-    new TransactionBuilder(account, {
-      fee: BASE_FEE,
-      networkPassphrase: Networks.TESTNET
-    })
-    .addOperation(Operation.payment({
-      destination: vault,
-      asset: XLM,
-      amount: request.amount
-    }))
-    .addOperation(Operation.payment({
-      destination: request.to,
-      asset: TYLERCOIN,
-      amount: request.amount,
-      source: contract
-    }))
-    .setTimeout(0)
-  )
+export default async ({request, turrets}) => {
+  try {
+    const transaction = await server
+    .loadAccount(request.source)
+    .then((account) =>
+      new TransactionBuilder(account, {
+        fee: BASE_FEE,
+        networkPassphrase: Networks.TESTNET
+      })
+      .addOperation(Operation.payment({
+        destination: vault,
+        asset: XLM,
+        amount: request.amount
+      }))
+      .addOperation(Operation.payment({
+        destination: request.to,
+        asset: TYLERCOIN,
+        amount: request.amount,
+        source: contract
+      }))
+      .setTimeout(0)
+    )
 
-  for (const signer of signers) {
-    transaction.addOperation(Operation.payment({
-      destination: signer.vault,
-      asset: XLM,
-      amount: signer.fee
-    }))
+    for (const turret of turrets) {
+      transaction.addOperation(Operation.payment({
+        destination: turret.vault,
+        asset: XLM,
+        amount: turret.fee
+      }))
+    }
+
+    return transaction.build().toXDR()
   }
 
-  return transaction.build().toXDR()
+  catch(err) {
+    throw err
+  }
 
   // const signerKeypair = Keypair.fromSecret(SIGNER)
   // const vaultKeypair = Keypair.fromSecret(VAULT)
