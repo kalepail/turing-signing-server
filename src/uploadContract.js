@@ -3,6 +3,7 @@ import AWS from 'aws-sdk'
 import middy from '@middy/core'
 import httpMultipartBodyParser from '@middy/http-multipart-body-parser'
 import httpHeaderNormalizer from '@middy/http-header-normalizer'
+import doNotWaitForEmptyEventLoop from '@middy/do-not-wait-for-empty-event-loop'
 import Promise from 'bluebird'
 import { map } from 'lodash'
 
@@ -10,6 +11,9 @@ import { headers, parseError } from './js/utils'
 import Pool from './js/pg'
 
 // Require TURING_UPLOAD_FEE to be paid in a presigned txn to the TURING_VAULT_ADDRESS
+// If limits are hit throw error don't just truncate
+  // https://github.com/middyjs/middy/tree/master/packages/http-multipart-body-parser
+  // https://github.com/mscdex/busboy/issues/76
 
 AWS.config.setPromisesDependency(Promise)
 
@@ -24,7 +28,7 @@ const originalHandler = async (event, context, callback) => {
       (turret, i) => `Turret_${i}=${Buffer.from(turret, 'utf8').toString('base64')}`
     ).join('&')
 
-    await s3.upload({
+    await s3.putObject({
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: event.pathParameters.hash,
       Body: event.body.contract.content,
@@ -60,6 +64,11 @@ const originalHandler = async (event, context, callback) => {
 const handler = middy(originalHandler)
 
 handler
+.use(doNotWaitForEmptyEventLoop({
+  runOnBefore: true,
+  runOnAfter: true,
+  runOnError: true
+}))
 .use(httpHeaderNormalizer())
 .use(httpMultipartBodyParser({
   busboy: {
@@ -101,7 +110,7 @@ handler
 .use({
   onError(handler, next) {
     handler.response = parseError(handler.error)
-    return next()
+    next()
   }
 })
 

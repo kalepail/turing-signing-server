@@ -51,6 +51,7 @@ functions:
           - s3:GetObject
           - s3:PutObject
           - s3:PutObjectAcl
+          - s3:PutObjectTagging
         Resource: arn:aws:s3:::${opt:service}/*
     timeout: 9
     events:
@@ -65,6 +66,7 @@ functions:
     iamRoleStatements:
       - Effect: Allow
         Action:
+          - s3:DeleteObjectTagging
           - s3:PutObjectTagging
         Resource: arn:aws:s3:::${opt:service}/*
     timeout: 6
@@ -89,6 +91,10 @@ functions:
     handler: src/runContract.default
     environment: ${file(env.yml)}
     iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:GetObjectTagging
+        Resource: arn:aws:s3:::${opt:service}/*
       - Effect: Allow
         Action:
           - lambda:InvokeFunction

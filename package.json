@@ -37,8 +37,10 @@
   },
   "dependencies": {
     "@middy/core": "^1.0.0",
+    "@middy/do-not-wait-for-empty-event-loop": "^1.0.0",
     "@middy/http-header-normalizer": "^1.0.0",
     "@middy/http-multipart-body-parser": "^1.0.0",
+    "@types/aws-lambda": "^8.10.51",
     "aws-sdk": "^2.664.0",
     "axios": "^0.19.2",
     "bluebird": "^3.7.2",
