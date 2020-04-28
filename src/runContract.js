@@ -2,7 +2,7 @@ import AWS from 'aws-sdk'
 import Promise from 'bluebird'
 import { Keypair, Networks, Transaction } from 'stellar-sdk'
 import axios from 'axios'
-import { map } from 'lodash'
+import { map, compact } from 'lodash'
 
 import lambda from './js/lambda'
 import { headers, parseError } from './js/utils'
@@ -33,9 +33,11 @@ export default async (event, context, callback) => {
       axios.get(`${turret}/contract/${event.pathParameters.hash}`)
       .then(({data}) => data)
       .catch(() => null) // Don't error out if a turingSigningServer request fails
-    )
+    ).then((turretsContractData) => compact(turretsContractData)) // if anything errors out, remove that from the response
 
-    const signerSecret = await Pool.query(`
+    const pgClient = await Pool.connect()
+
+    const signerSecret = await pgClient.query(`
       SELECT signer FROM contracts
       WHERE contract = '${event.pathParameters.hash}'
     `).then((data) => {
@@ -49,6 +51,8 @@ export default async (event, context, callback) => {
         message: 'Contract not found'
       }
     })
+
+    await pgClient.release()
 
     const signerKeypair = Keypair.fromSecret(signerSecret)
 

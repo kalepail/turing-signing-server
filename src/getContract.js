@@ -7,7 +7,9 @@ export default async (event, context, callback) => {
   context.callbackWaitsForEmptyEventLoop = false
 
   try {
-    const signerSecret = await Pool.query(`
+    const pgClient = await Pool.connect()
+
+    const signerSecret = await pgClient.query(`
      SELECT signer FROM contracts
      WHERE contract = '${event.pathParameters.hash}'
    `).then((data) => {
@@ -21,6 +23,8 @@ export default async (event, context, callback) => {
         message: 'Contract not found'
       }
     })
+
+    await pgClient.release()
 
     const signerKeypair = Keypair.fromSecret(signerSecret)
 

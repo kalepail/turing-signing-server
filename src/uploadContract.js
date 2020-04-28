@@ -40,10 +40,14 @@ const originalHandler = async (event, context, callback) => {
       Tagging
     }).promise()
 
-    await Pool.query(`
+    const pgClient = await Pool.connect()
+
+    await pgClient.query(`
       INSERT INTO contracts (contract, signer)
       SELECT '${event.pathParameters.hash}', '${signer.secret()}'
     `)
+
+    await pgClient.release()
 
     return {
       headers,
@@ -94,10 +98,14 @@ handler
       Key: handler.event.pathParameters.hash,
     }).promise().catch(() => null)
 
-    const signerSecret = await Pool.query(`
+    const pgClient = await Pool.connect()
+
+    const signerSecret = await pgClient.query(`
       SELECT contract FROM contracts
       WHERE contract = '${handler.event.pathParameters.hash}'
     `).then((data) => data.rows[0]).catch(() => null)
+
+    await pgClient.release()
 
     if (
       s3Contract
