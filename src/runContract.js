@@ -73,6 +73,8 @@ export default async (event, context, callback) => {
     const transaction = new Transaction(xdr, Networks[process.env.STELLAR_NETWORK])
     const signature = signerKeypair.sign(transaction.hash()).toString('base64')
 
+    console.log( xdr.indexOf('"') )
+
     return {
       headers,
       statusCode: 200,

@@ -40,7 +40,8 @@ export default async ({request, turrets}) => {
       transaction.addOperation(Operation.payment({
         destination: turret.vault,
         asset: XLM,
-        amount: turret.fee
+        amount: turret.fee,
+        source: contract
       }))
     }
 

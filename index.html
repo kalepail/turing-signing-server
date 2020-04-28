@@ -48,6 +48,11 @@
       max-width: 350px;
       font-size: 12px;
       padding: 10px;
+      margin-bottom: 5px;
+    }
+    div {
+      display: flex;
+      flex-direction: column;
     }
   </style>
 </head>
@@ -72,7 +77,10 @@
     <button>Generate XDR</button>
   </form>
 
-  <textarea rows="10"></textarea>
+  <div>
+    <textarea rows="5"></textarea>
+    <a class="stellar-expert" href="javascript:void(0)" target="_blank">Sign in Stellar.Expert</a>
+  </div>
 
   <script>
     document.querySelector('form').addEventListener('submit', (e) => {
@@ -94,6 +102,7 @@
       .then((response) => response.text())
       .then((result) => {
         document.querySelector('textarea').value = result
+        document.querySelector('.stellar-expert').href = `https://laboratory.stellar.org/#txsigner?xdr=${encodeURIComponent(result)}&network=test`
       })
       .catch((err) => console.error(err))
     })
