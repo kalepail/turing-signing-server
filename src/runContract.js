@@ -33,7 +33,7 @@ export default async (event, context, callback) => {
       axios.get(`${turret}/contract/${event.pathParameters.hash}`)
       .then(({data}) => data)
       .catch(() => null) // Don't error out if a turingSigningServer request fails
-    ).then((turretsContractData) => compact(turretsContractData)) // if anything errors out, remove that from the response
+    ).then((data) => compact(data)) // if anything errors out, remove that from the response
 
     const pgClient = await Pool.connect()
 
