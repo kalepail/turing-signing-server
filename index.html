@@ -1,6 +1,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
     body {
@@ -19,12 +20,14 @@
     h2 {
       font-size: 20px;
       margin-bottom: 20px;
+      overflow: hidden;
     }
+
     form {
       display: flex;
       flex-direction: column;
       width: 100%;
-      max-width: 350px;
+      max-width: 500px;
       margin: 0 0 20px 0;
     }
     label {
@@ -42,17 +45,18 @@
       margin: 0;
       padding: 10px;
     }
-    textarea {
-      resize: none;
-      width: 100%;
-      max-width: 350px;
-      font-size: 12px;
-      padding: 10px;
-      margin-bottom: 5px;
-    }
+
     div {
       display: flex;
       flex-direction: column;
+      width: 100%;
+      max-width: 500px;
+    }
+    textarea {
+      resize: none;
+      font-size: 12px;
+      padding: 10px;
+      margin-bottom: 5px;
     }
   </style>
 </head>

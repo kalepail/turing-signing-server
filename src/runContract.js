@@ -68,12 +68,10 @@ export default async (event, context, callback) => {
         }
       })
     }).promise()
-    .then(({Payload}) => Payload)
+    .then(({Payload}) => Payload.replace(/\"|\'/g, '')) // Live lambdas have extra " for some reason
 
     const transaction = new Transaction(xdr, Networks[process.env.STELLAR_NETWORK])
     const signature = signerKeypair.sign(transaction.hash()).toString('base64')
-
-    console.log( xdr.indexOf('"') )
 
     return {
       headers,
