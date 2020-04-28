@@ -1,0 +1,48 @@
+{
+  "name": "stellar-turing-server",
+  "private": true,
+  "scripts": {
+    "dev": "npx sls offline --service turing-signing-server-0",
+    "deploy-0": "npx sls deploy --service turing-signing-server-0",
+    "deploy-1": "npx sls deploy --service turing-signing-server-1",
+    "deploy-2": "npx sls deploy --service turing-signing-server-2",
+    "deploy-3": "npx sls deploy --service turing-signing-server-3",
+    "deploy-4": "npx sls deploy --service turing-signing-server-4",
+    "deploy-all": "npm run deploy-0 ; npm run deploy-1 ; npm run deploy-2 ; npm run deploy-3 ; npm run deploy-4",
+    "contracts": "npx webpack --config webpack.config.contracts.js"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.9.0",
+    "@babel/plugin-transform-runtime": "^7.9.0",
+    "@babel/preset-env": "^7.9.5",
+    "@babel/runtime": "^7.9.2",
+    "babel-loader": "^8.1.0",
+    "babel-plugin-source-map-support": "^2.1.1",
+    "clean-webpack-plugin": "^3.0.0",
+    "glob": "^7.1.6",
+    "path": "^0.12.7",
+    "serverless": "^1.68.0",
+    "serverless-domain-manager": "^3.3.2",
+    "serverless-iam-roles-per-function": "^2.0.2",
+    "serverless-offline": "6.1.4",
+    "serverless-webpack": "^5.3.1",
+    "terser-webpack-plugin": "^2.3.6",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11",
+    "webpack-node-externals": "^1.7.2"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.664.0",
+    "axios": "^0.19.2",
+    "bluebird": "^3.7.2",
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "lodash": "^4.17.15",
+    "multer": "^1.4.2",
+    "pg": "^8.0.3",
+    "require-from-string": "^2.0.2",
+    "serverless-http": "^2.3.2",
+    "source-map-support": "^0.5.19",
+    "stellar-sdk": "^4.1.0"
+  }
+}

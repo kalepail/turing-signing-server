@@ -1,0 +1,91 @@
+tenant: tyvdh
+app: turing-signing-server
+service: ${opt:service}
+
+plugins:
+  - serverless-iam-roles-per-function
+  - serverless-webpack
+  - serverless-offline
+
+package:
+  individually: true
+
+custom:
+  webpack:
+    webpackConfig: webpack.config.js
+    includeModules:
+      forceInclude:
+        - source-map-support
+    packager: npm
+  serverless-offline:
+    useChildProcesses: true
+    httpsProtocol: certs
+    httpPort: 4000
+  serverless-iam-roles-per-function:
+    defaultInherit: true
+
+provider:
+  name: aws
+  environment:
+    SERVICE_NAME: ${opt:service}
+    PG_DATABASE: ${opt:service}
+    AWS_BUCKET_NAME: ${opt:service}
+  runtime: nodejs12.x
+  region: us-east-1
+  tracing:
+    lambda: true
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - xray:PutTelemetryRecords
+        - xray:PutTraceSegments
+      Resource: '*'
+
+functions:
+  uploadContract:
+    handler: src/uploadContract.default
+    environment: ${file(env.yml)}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:GetObject
+          - s3:PutObject
+          - s3:PutObjectAcl
+        Resource: arn:aws:s3:::${opt:service}/*
+    timeout: 9
+    events:
+      - http:
+          path: contract/{hash}
+          method: POST
+          cors: true
+
+  getContract:
+    handler: src/getContract.default
+    environment: ${file(env.yml)}
+    iamRoleStatements: []
+    timeout: 3
+    events:
+      - http:
+          path: contract/{hash}
+          method: GET
+          cors: true
+
+  runContract:
+    handler: src/runContract.default
+    environment: ${file(env.yml)}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - lambda:InvokeFunction
+        Resource: '*'
+    timeout: 9
+    events:
+      - http:
+          path: contract/{hash}/run
+          method: POST
+          cors: true
+
+  runContractPrivate:
+    handler: src/runContractPrivate.default
+    timeout: 6
+    memorySize: 128
