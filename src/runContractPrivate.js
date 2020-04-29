@@ -1,9 +1,29 @@
 import requireFromString from 'require-from-string'
 
-export default ({ script, body }, context, callback) => {
+export default async (event, context, callback) => {
   context.callbackWaitsForEmptyEventLoop = false
 
-  requireFromString(script)(body)
-  .then((data) => callback(null, data))
-  .catch((err) => callback(err))
+  try {
+    return {
+      isError: false,
+      message: requireFromString(event.script)(event.body)
+    }
+  }
+
+  catch(err) {
+    return {
+      isError: true,
+      message: err.message
+    }
+  }
+
+  // requireFromString(script)(body)
+  // .then((data) => callback(null, data))
+  // .catch((err) => {
+  //   console.error('butts')
+  //   callback(err)
+  //   throw err
+  // })
 }
+
+// Don't seem able to throw and error which shows up in the lambda catch promise block

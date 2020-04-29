@@ -35,7 +35,7 @@ const originalHandler = async (event) => {
       ContentType: event.body.contract.mimetype,
       ContentLength: event.body.contract.content.length,
       StorageClass: 'STANDARD',
-      CacheControl: 'public',
+      CacheControl: 'public; max-age=31536000',
       ACL: 'public-read',
       Tagging
     }).promise()

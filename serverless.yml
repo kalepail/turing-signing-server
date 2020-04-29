@@ -108,5 +108,32 @@ functions:
 
   runContractPrivate:
     handler: src/runContractPrivate.default
-    timeout: 6
+    # DependsOn: IamPolicyLambdaExecution
+    # iamRoleStatements:
+    #   - Effect: Allow
+    #     Action:
+    #       - ec2:CreateNetworkInterface
+    #       - ec2:DescribeNetworkInterfaces
+    #       - ec2:DetachNetworkInterface
+    #       - ec2:DeleteNetworkInterface
+    #     Resource: '*'
+    vpc:
+      securityGroupIds:
+        - sg-ce7591b7
+      subnetIds:
+        - subnet-0a970206
+        - subnet-1a68ef27
+        - subnet-3ba56f4d
+        - subnet-4ba1be60
+        - subnet-4f03ee17
+        - subnet-d0422cb5
+    timeout: 9
     memorySize: 128
+
+# resources:
+#   Resources:
+#     RunContractPrivateLambdaFunction:
+#       Type: AWS::Lambda::Function
+#       DependsOn:
+#         - IamRoleLambdaExecution
+#         - IamPolicyLambdaExecution

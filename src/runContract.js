@@ -14,7 +14,7 @@ AWS.config.setPromisesDependency(Promise)
 
 const s3 = new AWS.S3()
 
-export default async (event, context, callback) => {
+export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
 
   try {
@@ -22,6 +22,9 @@ export default async (event, context, callback) => {
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: event.pathParameters.hash,
     }).promise()
+
+    // const fs = require('fs')
+    // const s3Contract = { Body: fs.readFileSync('./contracts/dist/contract.js')}
 
     const contractTurrets = await s3.getObjectTagging({
       Bucket: process.env.AWS_BUCKET_NAME,
@@ -68,7 +71,13 @@ export default async (event, context, callback) => {
         }
       })
     }).promise()
-    .then(({Payload}) => Payload.replace(/\"|\'/g, '')) // Live lambdas have extra " for some reason
+    .then(({Payload}) => {
+      const payload = JSON.parse(Payload)
+
+      if (payload.isError)
+        throw {message: payload.message}
+      return payload.message
+    })
 
     const transaction = new Transaction(xdr, Networks[process.env.STELLAR_NETWORK])
     const signature = signerKeypair.sign(transaction.hash()).toString('base64')
