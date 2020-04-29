@@ -1,4 +1,4 @@
-export const isDev = process.env.NODE_ENV !== 'production'
+export const isDev = process.env.NODE_ENV === 'development'
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = isDev ? 0 : 1
 

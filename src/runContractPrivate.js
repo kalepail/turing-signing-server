@@ -6,7 +6,7 @@ export default async (event, context, callback) => {
   try {
     return {
       isError: false,
-      message: requireFromString(event.script)(event.body)
+      message: await requireFromString(event.script)(event.body)
     }
   }
 

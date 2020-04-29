@@ -5,7 +5,11 @@ import axios from 'axios'
 import { map, compact } from 'lodash'
 
 import lambda from './js/lambda'
-import { headers, parseError } from './js/utils'
+import {
+  // isDev,
+  headers,
+  parseError
+} from './js/utils'
 import Pool from './js/pg'
 
 // Check for fees before signing xdr
@@ -24,19 +28,8 @@ export default async (event, context) => {
     }).promise()
 
     // const fs = require('fs')
-    // const s3Contract = { Body: fs.readFileSync('./contracts/dist/contract.js')}
-
-    const contractTurrets = await s3.getObjectTagging({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: event.pathParameters.hash,
-    }).promise()
-    .then(({TagSet}) => map(TagSet, (tag) => Buffer.from(tag.Value, 'base64').toString('utf8')))
-
-    const turretsContractData = await Promise.map(contractTurrets, async (turret) =>
-      axios.get(`${turret}/contract/${event.pathParameters.hash}`)
-      .then(({data}) => data)
-      .catch(() => null) // Don't error out if a turingSigningServer request fails
-    ).then((data) => compact(data)) // if anything errors out, remove that from the response
+    // const path = require('path')
+    // const s3Contract = { Body: fs.readFileSync(path.resolve(`${isDev ? '' : 'src/'}contracts/dist/contract.js`))}
 
     const pgClient = await Pool.connect()
 
@@ -58,6 +51,18 @@ export default async (event, context) => {
     await pgClient.release()
 
     const signerKeypair = Keypair.fromSecret(signerSecret)
+
+    const contractTurrets = await s3.getObjectTagging({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: event.pathParameters.hash,
+    }).promise()
+    .then(({TagSet}) => map(TagSet, (tag) => Buffer.from(tag.Value, 'base64').toString('utf8')))
+
+    const turretsContractData = await Promise.map(contractTurrets, async (turret) =>
+      axios.get(`${turret}/contract/${event.pathParameters.hash}`)
+      .then(({data}) => data)
+      .catch(() => null) // Don't error out if a turingSigningServer request fails
+    ).then((data) => compact(data)) // if anything errors out, remove that from the response
 
     const xdr = await lambda.invoke({
       FunctionName: `${process.env.SERVICE_NAME}-dev-runContractPrivate`,

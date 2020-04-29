@@ -13,7 +13,6 @@ const entryObject = entryArray.reduce((acc, item) => {
 }, {})
 
 module.exports = {
-  mode: 'production',
   target: 'node',
   entry: entryObject,
   output: {

@@ -7,6 +7,9 @@ AWS.config.setPromisesDependency(Promise)
 
 const s3 = new AWS.S3()
 
+// Use same input here for turrets as we do for the contract upload
+// Require contract proof of ownership before updating
+
 export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
 

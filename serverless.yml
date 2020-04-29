@@ -13,6 +13,7 @@ package:
 custom:
   webpack:
     webpackConfig: webpack.config.js
+    keepOutputDirectory: true
     includeModules:
       forceInclude:
         - source-map-support
@@ -127,7 +128,7 @@ functions:
         - subnet-4ba1be60
         - subnet-4f03ee17
         - subnet-d0422cb5
-    timeout: 9
+    timeout: 6
     memorySize: 128
 
 # resources:

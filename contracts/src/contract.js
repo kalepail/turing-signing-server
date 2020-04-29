@@ -6,11 +6,12 @@ const XLM = Asset.native()
 const TYLERCOIN = new Asset('TYLERCOIN', contract)
 
 // Ensure fees are acceptable (public contract could have raised them)
-// Include logic for adding a trustline to the destination account for TYLERCOIN
-// This lambda is in a VPC so no outgoing requests are permitted
+// This contract executes in a VPC so no outgoing requests are permitted
   // This means no Stellar server calls
 
-export default ({request, turrets}) => {
+console.log(process.env.NODE_ENV)
+
+export default async ({request, turrets}) => {
   const transaction = new TransactionBuilder(
     new Account(request.source, request.sequence),
     {
@@ -22,6 +23,9 @@ export default ({request, turrets}) => {
     destination: vault,
     asset: XLM,
     amount: request.amount
+  }))
+  .addOperation(Operation.changeTrust({
+    asset: TYLERCOIN
   }))
   .addOperation(Operation.payment({
     destination: request.to,

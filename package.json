@@ -13,6 +13,7 @@
     "deploy-3": "npx sls deploy --service turing-signing-server-3",
     "deploy-4": "npx sls deploy --service turing-signing-server-4",
     "deploy-all": "npm run deploy-0 ; npm run deploy-1 ; npm run deploy-2 ; npm run deploy-3 ; npm run deploy-4",
+    "pack": "npx sls webpack --service turing-signing-server-0",
     "contracts": "npx webpack --config webpack.config.contracts.js"
   },
   "devDependencies": {
