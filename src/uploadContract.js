@@ -19,7 +19,7 @@ AWS.config.setPromisesDependency(Promise)
 
 const s3 = new AWS.S3()
 
-const originalHandler = async (event, context, callback) => {
+const originalHandler = async (event) => {
   try {
     const signer = Keypair.random()
 

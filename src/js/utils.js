@@ -1,6 +1,6 @@
 export const isDev = process.env.NODE_ENV !== 'production'
 
-process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = isDev ? 0 : 1
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = isDev ? 0 : 1
 
 export const headers = {
   'Access-Control-Allow-Origin': '*',

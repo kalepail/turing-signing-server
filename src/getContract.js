@@ -3,7 +3,7 @@ import { Keypair } from 'stellar-sdk'
 import { headers, parseError } from './js/utils'
 import Pool from './js/pg'
 
-export default async (event, context, callback) => {
+export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
 
   try {

@@ -7,7 +7,7 @@ AWS.config.setPromisesDependency(Promise)
 
 const s3 = new AWS.S3()
 
-export default async (event, context, callback) => {
+export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
 
   try {
