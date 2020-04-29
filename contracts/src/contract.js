@@ -12,6 +12,7 @@ const TYLERCOIN = new Asset('TYLERCOIN', contract)
 // 'https://aefrqlrkb3.execute-api.us-east-1.amazonaws.com/dev,https://ajhwq8wzwa.execute-api.us-east-1.amazonaws.com/dev,https://a9rw0d7djl.execute-api.us-east-1.amazonaws.com/dev,https://qt8bahr41a.execute-api.us-east-1.amazonaws.com/dev,https://tx4qxpecmi.execute-api.us-east-1.amazonaws.com/dev'
 
 // Ensure fees are acceptable (public contract could have raised them)
+// Include logic for adding a trustline to the destination account for TYLERCOIN
 
 export default async ({request, turrets}) => {
   try {

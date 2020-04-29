@@ -1,0 +1,37 @@
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" type="text/css" href="reset.css">
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+  <h1><aside>TYLERCOIN</aside> Smart Contract</h1>
+  <h2><a href="https://stellar.expert/explorer/testnet/account/GCNANNNLGDICM5NJOT7QD7MLW34M4WLJPTNOAXWEAR4CE4LO23FZ5WDR">GCNANNNLGDICM5NJOT7QD7MLW34M4WLJPTNOAXWEAR4CE4LO23FZ5WDR</a></h2>
+
+  <form>
+    <label>
+      Where would you like TYLERCOIN sent to?
+      <input type="text" name="to" value="" placeholder="GBH...YOU">
+    </label>
+    <label>
+      What source account should we use for this transaction? (often the same as above)
+      <input type="text" name="source" value="" placeholder="GBH...YOU">
+    </label>
+    <label>
+      TYLERCOIN is pegged 1:1 with XLM. <br> How much are you looking to pay & receive?
+      <input type="text" name="amount" value="" placeholder="500">
+    </label>
+
+    <button>Generate XDR</button>
+  </form>
+
+  <div>
+    <textarea rows="5"></textarea>
+    <a class="stellar-expert" href="javascript:void(0)" target="_blank">Sign Transaction in Stellar Laboratory</a>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
