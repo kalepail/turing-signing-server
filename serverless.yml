@@ -101,6 +101,7 @@ functions:
           - lambda:InvokeFunction
         Resource: '*'
     timeout: 9
+    reservedConcurrency: 9
     events:
       - http:
           path: contract/{hash}/run
@@ -109,32 +110,27 @@ functions:
 
   runContractPrivate:
     handler: src/runContractPrivate.default
-    # DependsOn: IamPolicyLambdaExecution
-    # iamRoleStatements:
-    #   - Effect: Allow
-    #     Action:
-    #       - ec2:CreateNetworkInterface
-    #       - ec2:DescribeNetworkInterfaces
-    #       - ec2:DetachNetworkInterface
-    #       - ec2:DeleteNetworkInterface
-    #     Resource: '*'
-    vpc:
-      securityGroupIds:
-        - sg-ce7591b7
-      subnetIds:
-        - subnet-0a970206
-        - subnet-1a68ef27
-        - subnet-3ba56f4d
-        - subnet-4ba1be60
-        - subnet-4f03ee17
-        - subnet-d0422cb5
+    iamRoleStatements: []
+    # vpc:
+    #   securityGroupIds:
+    #     - sg-ce7591b7
+    #   subnetIds:
+    #     - subnet-0a970206
+    #     - subnet-1a68ef27
+    #     - subnet-3ba56f4d
+    #     - subnet-4ba1be60
+    #     - subnet-4f03ee17
+    #     - subnet-d0422cb5
     timeout: 6
+    maximumRetryAttempts: 0
+    maximumRecordAgeInSeconds: 0
     memorySize: 128
 
-# resources:
-#   Resources:
-#     RunContractPrivateLambdaFunction:
-#       Type: AWS::Lambda::Function
-#       DependsOn:
-#         - IamRoleLambdaExecution
-#         - IamPolicyLambdaExecution
+  checkContractPrivate:
+    handler: src/checkContractPrivate.default
+    environment: ${file(env.yml)}
+    iamRoleStatements: []
+    # timeout: 6
+    maximumRetryAttempts: 0
+    maximumRecordAgeInSeconds: 0
+    # memorySize: 128

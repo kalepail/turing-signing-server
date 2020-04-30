@@ -2,17 +2,18 @@ import AWS from 'aws-sdk'
 import Promise from 'bluebird'
 import { Keypair, Networks, Transaction } from 'stellar-sdk'
 import axios from 'axios'
-import { map, compact } from 'lodash'
+import { get, map, compact } from 'lodash'
 
 import lambda from './js/lambda'
 import {
-  // isDev,
+  isDev,
   headers,
   parseError
 } from './js/utils'
 import Pool from './js/pg'
 
 // Check for fees before signing xdr
+// Pools should be released even if there are errors, maybe in the finally block?
 
 AWS.config.setPromisesDependency(Promise)
 
@@ -22,6 +23,15 @@ export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
 
   try {
+    await lambda.invoke({
+      FunctionName: `${process.env.SERVICE_NAME}-dev-checkContractPrivate`,
+      InvocationType: 'Event',
+      LogType: 'None',
+      Payload: JSON.stringify({
+        hash: event.pathParameters.hash
+      })
+    }).promise()
+
     const s3Contract = await s3.getObject({
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: event.pathParameters.hash,
@@ -31,24 +41,48 @@ export default async (event, context) => {
     // const path = require('path')
     // const s3Contract = { Body: fs.readFileSync(path.resolve(`${isDev ? '' : 'src/'}contracts/dist/contract.js`))}
 
-    const pgClient = await Pool.connect()
+    const pgClientSelect = await Pool.connect()
 
-    const signerSecret = await pgClient.query(`
-      SELECT signer FROM contracts
+    // Transactions signed but not submitted
+      // Can just keep spamming the same transaction
+    // Limits should be set per txn and per contract
+
+    // Unsubmitted contract limits
+    // Same txn output limits
+
+    const dupeLength = await pgClientSelect.query(`
+      SELECT cardinality(pendingtxns) FROM contracts
       WHERE contract = '${event.pathParameters.hash}'
     `).then((data) => {
-      const contractSigner = data.rows[0]
+      const contractExists = data.rows[0]
 
-      if (contractSigner)
-        return contractSigner.signer
+      if (contractExists)
+        return get(data, 'rows[0].cardinality')
 
       throw {
         status: 404,
         message: 'Contract not found'
       }
-    })
+    }) // Include an extra catch statement in the first request to check for contract existence
 
-    await pgClient.release()
+    if (dupeLength >= process.env.TURING_DUPE_LIMIT) // Contract locked due to too many duplicate unsubmitted txns
+      throw 'TURING_DUPE_LIMIT'
+
+    const uniqueLength = await pgClientSelect.query(`
+      select array(select distinct unnest(pendingtxns))
+        from contracts
+      WHERE contract = '${event.pathParameters.hash}'
+    `).then((data) => get(data, 'rows[0].array', []).length)
+
+    if (uniqueLength >= process.env.TURING_UNIQ_LIMIT) // Contract locked due to too many unsubmitted txns
+      throw 'TURING_UNIQ_LIMIT'
+
+    const signerSecret = await pgClientSelect.query(`
+      SELECT signer FROM contracts
+      WHERE contract = '${event.pathParameters.hash}'
+    `).then((data) => get(data, 'rows[0].signer'))
+
+    await pgClientSelect.release()
 
     const signerKeypair = Keypair.fromSecret(signerSecret)
 
@@ -69,7 +103,7 @@ export default async (event, context) => {
       InvocationType: 'RequestResponse',
       LogType: 'None',
       Payload: JSON.stringify({
-        script: s3Contract.Body.toString('utf8'),
+        script: s3Contract.Body.toString('utf8'), // Passing the whole script in string form isn't awesome, maybe the payload should be a buffer? Or the contract should load itself from a url
         body: {
           request: JSON.parse(event.body),
           turrets: turretsContractData
@@ -86,6 +120,16 @@ export default async (event, context) => {
 
     const transaction = new Transaction(xdr, Networks[process.env.STELLAR_NETWORK])
     const signature = signerKeypair.sign(transaction.hash()).toString('base64')
+
+    const pgClientUpdate = await Pool.connect()
+
+    await pgClientUpdate.query(`
+      update contracts set
+        pendingtxns = array_append(pendingtxns, '${transaction.hash().toString('hex')}')
+      where contract = '${event.pathParameters.hash}'
+    `)
+
+    await pgClientUpdate.release()
 
     return {
       headers,
