@@ -1,0 +1,2 @@
+# npx sls logs --service turing-signing-server-0 -f runContract
+loadtest -n 100 -c 9 -k --data '{"to": "GAWSNOA5AMEXLQ2SJM65RH25CEM7O7OV7ZYBSGSGNFUGBJBCGQRAAHOX","source": "GAWSNOA5AMEXLQ2SJM65RH25CEM7O7OV7ZYBSGSGNFUGBJBCGQRAAHOX","sequence": "10561324580865","amount": "100"}' -T 'application/json' -m POST https://aefrqlrkb3.execute-api.us-east-1.amazonaws.com/dev/contract/GCNANNNLGDICM5NJOT7QD7MLW34M4WLJPTNOAXWEAR4CE4LO23FZ5WDR/run

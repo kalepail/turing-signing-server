@@ -1,4 +1,4 @@
-import { TransactionBuilder, Networks, Asset, BASE_FEE, Operation, Account } from 'stellar-sdk'
+import { TransactionBuilder, Networks, Asset, BASE_FEE, Operation, Server } from 'stellar-sdk'
 
 const contract = 'GCNANNNLGDICM5NJOT7QD7MLW34M4WLJPTNOAXWEAR4CE4LO23FZ5WDR'
 const vault = 'GBHKNCNOMBHHLHBLUTGUSKJPTHDQGJQLAICXFE4SMFAKOO5WO54BJJOR'
@@ -9,31 +9,35 @@ const TYLERCOIN = new Asset('TYLERCOIN', contract)
 // This contract executes in a VPC so no outgoing requests are permitted
   // This means no Stellar server calls
 
-console.log(process.env.NODE_ENV)
-
 export default async ({request, turrets}) => {
-  const transaction = new TransactionBuilder(
-    new Account(request.source, request.sequence),
-    {
-      fee: BASE_FEE,
-      networkPassphrase: Networks.TESTNET
-    }
-  )
-  .addOperation(Operation.payment({
-    destination: vault,
-    asset: XLM,
-    amount: request.amount
-  }))
-  .addOperation(Operation.changeTrust({
-    asset: TYLERCOIN
-  }))
-  .addOperation(Operation.payment({
-    destination: request.to,
-    asset: TYLERCOIN,
-    amount: request.amount,
-    source: contract
-  }))
-  .setTimeout(0)
+  const server = new Server('https://horizon-testnet.stellar.org')
+
+  const transaction = await server
+  .loadAccount(request.source)
+  .then((account) => {
+    return new TransactionBuilder(
+      account,
+      {
+        fee: BASE_FEE,
+        networkPassphrase: Networks.TESTNET
+      }
+    )
+    .addOperation(Operation.payment({
+      destination: vault,
+      asset: XLM,
+      amount: request.amount
+    }))
+    .addOperation(Operation.changeTrust({
+      asset: TYLERCOIN
+    }))
+    .addOperation(Operation.payment({
+      destination: request.to,
+      asset: TYLERCOIN,
+      amount: request.amount,
+      source: contract
+    }))
+    .setTimeout(0)
+  })
 
   for (const turret of turrets) {
     transaction.addOperation(Operation.payment({

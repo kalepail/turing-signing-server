@@ -1,6 +1,6 @@
 import requireFromString from 'require-from-string'
 
-export default async (event, context, callback) => {
+export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
 
   try {
