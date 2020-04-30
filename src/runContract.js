@@ -23,15 +23,6 @@ export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
 
   try {
-    await lambda.invoke({
-      FunctionName: `${process.env.SERVICE_NAME}-dev-checkContractPrivate`,
-      InvocationType: 'Event',
-      LogType: 'None',
-      Payload: JSON.stringify({
-        hash: event.pathParameters.hash
-      })
-    }).promise()
-
     const s3Contract = await s3.getObject({
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: event.pathParameters.hash,
@@ -41,6 +32,15 @@ export default async (event, context) => {
     // const path = require('path')
     // const s3Contract = { Body: fs.readFileSync(path.resolve(`${isDev ? '' : 'src/'}contracts/dist/contract.js`))}
 
+    await lambda.invoke({ // Call after the s3 lookup to ensure we've actually got a contract to work with
+      FunctionName: `${process.env.SERVICE_NAME}-dev-checkContractPrivate`,
+      InvocationType: 'Event',
+      LogType: 'None',
+      Payload: JSON.stringify({
+        hash: event.pathParameters.hash
+      })
+    }).promise()
+
     const pgClientSelect = await Pool.connect()
 
     // Transactions signed but not submitted
@@ -49,6 +49,9 @@ export default async (event, context) => {
 
     // Unsubmitted contract limits
     // Same txn output limits
+
+    // Dupe is pretty easy to bypass just by sending a different request, amount, to, source, etc.
+    // Not currently using sqs
 
     const dupeLength = await pgClientSelect.query(`
       SELECT cardinality(pendingtxns) FROM contracts

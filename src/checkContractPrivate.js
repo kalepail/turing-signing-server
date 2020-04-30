@@ -5,7 +5,11 @@ import moment from 'moment'
 
 import Pool from './js/pg'
 
-// const server = new Server('https://horizon-testnet.stellar.org')
+// If a txn has been submitted to the network remove it from the pendingtxns array
+  // Since this will include looping over a rate limited horizon endpoint we should only run this occasionally and not as a response to a contract call
+
+// const horizon = process.env.STELLAR_NETWORK === 'TESTNET' ? 'https://horizon-testnet.stellar.org' : 'https://horizon.stellar.org'
+// const server = new Server(horizon)
 
 export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
