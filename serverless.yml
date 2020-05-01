@@ -126,8 +126,8 @@ functions:
             origin: '*'
             cacheControl: 'public; max-age=14400'
 
-  collateContract:
-    handler: src/collateContract.default
+  runContractCollate:
+    handler: src/runContractCollate.default
     environment: ${file(env.yml)}
     iamRoleStatements:
       - Effect: Allow
@@ -137,7 +137,7 @@ functions:
     timeout: 12
     events:
       - http:
-          path: contract/{hash}/collate
+          path: contract/{hash}/run/collate
           method: POST
           cors:
             origin: '*'

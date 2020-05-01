@@ -15,6 +15,8 @@ import Pool from './js/pg'
   // https://github.com/middyjs/middy/tree/master/packages/http-multipart-body-parser
   // https://github.com/mscdex/busboy/issues/76
 
+// Should/could this be a collation endpoint which takes the turrets and forwards on the contract to the other turrets and sends back the responses in an array?
+
 AWS.config.setPromisesDependency(Promise)
 
 const s3 = new AWS.S3()

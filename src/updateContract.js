@@ -13,6 +13,8 @@ AWS.config.setPromisesDependency(Promise)
 
 const s3 = new AWS.S3()
 
+// Should/could this be a collation endpoint which takes the turrets and forwards on the contract to the other turrets and sends back the responses in an array?
+
 const originalHandler = async (event) => {
   try {
     const keypair = Keypair.fromPublicKey(event.pathParameters.hash)
