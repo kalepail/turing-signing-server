@@ -1,6 +1,6 @@
-// import { Server } from 'stellar-sdk'
-// import Promise from 'bluebird'
-import { get } from 'lodash'
+import { Server } from 'stellar-sdk'
+import Promise from 'bluebird'
+import { uniqBy, get, chain, compact } from 'lodash'
 import moment from 'moment'
 
 import Pool from './js/pg'
@@ -8,8 +8,8 @@ import Pool from './js/pg'
 // If a txn has been submitted to the network remove it from the pendingtxns array
   // Since this will include looping over a rate limited horizon endpoint we should only run this occasionally and not as a response to a contract call
 
-// const horizon = process.env.STELLAR_NETWORK === 'TESTNET' ? 'https://horizon-testnet.stellar.org' : 'https://horizon.stellar.org'
-// const server = new Server(horizon)
+const horizon = process.env.STELLAR_NETWORK === 'TESTNET' ? 'https://horizon-testnet.stellar.org' : 'https://horizon.stellar.org'
+const server = new Server(horizon)
 
 export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
@@ -17,53 +17,66 @@ export default async (event, context) => {
   try {
     const pgClient = await Pool.connect()
 
-    const contractMeta = await pgClient.query(`
-      select nextdedupe, nextflush
+    const contractPendingTxns = await pgClient.query(`
+      select pendingtxns
         from contracts
       WHERE contract = '${event.hash}'
-    `).then((data) => get(data, 'rows[0]'))
+    `).then((data) => get(data, 'rows[0].pendingtxns'))
 
-    if (moment(parseInt(contractMeta.nextdedupe, 10)).isBefore()) {
-      console.log('Run Dedupe')
+    const uniqTxns = uniqBy(contractPendingTxns, (txn) => {
+      const [time, hash] = txn.split(':')
+      return hash
+    })
+
+    const liveTxns = await new Promise.map(uniqTxns, (txn) => { // Gotta watch for rate limits, this should probably be throttled to 1 request per second
+      return server
+      .transactions()
+      .transaction(txn)
+      .call()
+      .then((txn) => txn.id)
+      .catch(() => null)
+    }, {concurrency: 1})
+    .then((data) => compact(data))
+    .then((liveTxns) => chain(contractPendingTxns)
+      .map((txn) => {
+        const [time, hash] = txn.split(':')
+        return liveTxns.indexOf(hash) > -1 ? txn : null
+      })
+      .compact()
+      .value()
+    )
+
+    const expiredTxns = chain(contractPendingTxns)
+    .map((txn) => {
+      const [time, hash] = txn.split(':')
+
+      if (moment(parseInt(time, 10), 'X').isBefore())
+        return txn
+    })
+    .compact()
+    .value()
+
+    const flushList = Object.assign([], liveTxns, expiredTxns)
+
+    if (flushList.length) {
+      console.log(`Run flush on ${flushList.length} txns`)
 
       await pgClient.query(`
         update contracts set
-          pendingtxns = array(select distinct unnest(pendingtxns)),
-          nextdedupe = ${
-            parseInt(moment().add(1, 'minute').format('x'), 10) // Dedupe every minute
-          }
-        WHERE contract = '${event.hash}'
-      `)
-    }
-
-    if (moment(parseInt(contractMeta.nextflush, 10)).isBefore()) {
-      console.log('Run Flush')
-
-      await pgClient.query(`
-        update contracts set
-          pendingtxns = NULL,
-          nextflush = ${
-            parseInt(moment().add(1, 'hour').format('x'), 10) // Flush every hour
-          }
+          pendingtxns = (
+            select array_agg(elem)
+              from contracts, unnest(pendingtxns) elem
+            where elem <> all(array['${flushList.join('\',\'')}'])
+          )
         WHERE contract = '${event.hash}'
       `)
     }
 
     await pgClient.release()
 
-    // Need to add `array(select distinct unnest(pendingtxns))` to the contractMeta call
-    // const response = await new Promise.map(uniqueTxns, (txn) => {
-    //   return server
-    //   .transactions()
-    //   .transaction(txn)
-    //   .call()
-    //   .then((data) => true)
-    //   .catch((err) => false)
-    // }, {concurrency: 1})
-
     return {
       isError: false,
-      message: contractMeta
+      message: 'OK'
     }
   }
 

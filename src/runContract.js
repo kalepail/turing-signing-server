@@ -3,6 +3,7 @@ import Promise from 'bluebird'
 import { Keypair, Networks, Transaction } from 'stellar-sdk'
 import axios from 'axios'
 import { get, map, compact } from 'lodash'
+import moment from 'moment'
 
 import lambda from './js/lambda'
 import {
@@ -23,6 +24,12 @@ export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
 
   try {
+    const contractTurrets = await s3.getObjectTagging({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: event.pathParameters.hash,
+    }).promise()
+    .then(({TagSet}) => map(TagSet, (tag) => Buffer.from(tag.Value, 'base64').toString('utf8')))
+
     await lambda.invoke({ // Call after the s3 lookup to ensure we've actually got a contract to work with
       FunctionName: `${process.env.SERVICE_NAME}-dev-checkContractPrivate`,
       InvocationType: 'Event',
@@ -31,8 +38,6 @@ export default async (event, context) => {
         hash: event.pathParameters.hash
       })
     }).promise()
-
-    const pgClientSelect = await Pool.connect()
 
     // Transactions signed but not submitted
       // Can just keep spamming the same transaction
@@ -44,7 +49,9 @@ export default async (event, context) => {
     // Dupe is pretty easy to bypass just by sending a different request, amount, to, source, etc.
     // Not currently using sqs
 
-    const dupeLength = await pgClientSelect.query(`
+    const pgClientSelect = await Pool.connect()
+
+    const pendingTxnLength = await pgClientSelect.query(`
       SELECT cardinality(pendingtxns) FROM contracts
       WHERE contract = '${event.pathParameters.hash}'
     `).then((data) => {
@@ -59,17 +66,8 @@ export default async (event, context) => {
       }
     }) // Include an extra catch statement in the first request to check for contract existence
 
-    if (dupeLength >= process.env.TURING_DUPE_LIMIT) // Contract locked due to too many duplicate unsubmitted txns
-      throw 'TURING_DUPE_LIMIT'
-
-    const uniqueLength = await pgClientSelect.query(`
-      select array(select distinct unnest(pendingtxns))
-        from contracts
-      WHERE contract = '${event.pathParameters.hash}'
-    `).then((data) => get(data, 'rows[0].array', []).length)
-
-    if (uniqueLength >= process.env.TURING_UNIQ_LIMIT) // Contract locked due to too many unsubmitted txns
-      throw 'TURING_UNIQ_LIMIT'
+    if (pendingTxnLength >= process.env.TURING_PENDING_MAX) // Contract locked due to too many unsubmitted txns
+      throw 'TURING_PENDING_MAX'
 
     const signerSecret = await pgClientSelect.query(`
       SELECT signer FROM contracts
@@ -85,12 +83,6 @@ export default async (event, context) => {
       // Only attack I see is if there are extra turrets which are not valid signers for the contract
 
     // Only accept the forwarded body from the collation endpoint to avoid malicious turret fees
-
-    const contractTurrets = await s3.getObjectTagging({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: event.pathParameters.hash,
-    }).promise()
-    .then(({TagSet}) => map(TagSet, (tag) => Buffer.from(tag.Value, 'base64').toString('utf8')))
 
     const turretsContractData = await Promise.map(contractTurrets, async (turret) =>
       axios.get(`${turret}/contract/${event.pathParameters.hash}`)
@@ -125,7 +117,7 @@ export default async (event, context) => {
 
     await pgClientUpdate.query(`
       update contracts set
-        pendingtxns = array_append(pendingtxns, '${transaction.hash().toString('hex')}')
+        pendingtxns = array_append(pendingtxns, '${moment().add(process.env.TURING_PENDING_AGE, 'seconds').format('X')}:${transaction.hash().toString('hex')}')
       where contract = '${event.pathParameters.hash}'
     `)
 
