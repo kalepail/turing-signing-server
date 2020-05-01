@@ -19,3 +19,7 @@ select 'GCNANNNLGDICM5NJOT7QD7MLW34M4WLJPTNOAXWEAR4CE4LO23FZ5WDR', 'SDRJWX2SNJTM
 update contracts set
 	pendingtxns = NULL
 WHERE contract = 'GCNANNNLGDICM5NJOT7QD7MLW34M4WLJPTNOAXWEAR4CE4LO23FZ5WDR'
+
+update contracts set
+	pendingtxns = (select array_agg(distinct e) from unnest(pendingtxns || '{${transaction.hash().toString('hex')}}') e)
+where not pendingtxns @> '{${transaction.hash().toString('hex')}}'
