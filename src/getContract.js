@@ -3,6 +3,8 @@ import { Keypair } from 'stellar-sdk'
 import { headers, parseError } from './js/utils'
 import Pool from './js/pg'
 
+// Should/could we add another collation get endpoint which gets a contract's turrets and returns an array response of all turret data?
+
 export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
 

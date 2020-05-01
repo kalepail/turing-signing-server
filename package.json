@@ -14,7 +14,8 @@
     "deploy-4": "npx sls deploy --service turing-signing-server-4",
     "deploy-all": "npm run deploy-0 ; npm run deploy-1 ; npm run deploy-2 ; npm run deploy-3 ; npm run deploy-4",
     "pack": "npx sls webpack --service turing-signing-server-0",
-    "contracts": "npx webpack --config webpack.config.contracts.js"
+    "contracts-dev": "npx webpack --config webpack.config.contracts.js --mode development",
+    "contracts-prod": "npx webpack --config webpack.config.contracts.js --mode production"
   },
   "devDependencies": {
     "@babel/core": "^7.9.0",
@@ -42,12 +43,14 @@
     "@middy/do-not-wait-for-empty-event-loop": "^1.0.0",
     "@middy/http-header-normalizer": "^1.0.0",
     "@middy/http-multipart-body-parser": "^1.0.0",
+    "@stellar-expert/tx-signers-inspector": "^0.6.3",
     "@types/aws-lambda": "^8.10.51",
     "aws-sdk": "^2.664.0",
     "axios": "^0.19.2",
     "bluebird": "^3.7.2",
     "fs": "0.0.1-security",
     "lodash": "^4.17.15",
+    "moment": "^2.24.0",
     "pg": "^8.0.3",
     "require-from-string": "^2.0.2",
     "source-map-support": "^0.5.19",
