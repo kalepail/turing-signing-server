@@ -23,15 +23,6 @@ export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
 
   try {
-    const s3Contract = await s3.getObject({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: event.pathParameters.hash,
-    }).promise()
-
-    // const fs = require('fs')
-    // const path = require('path')
-    // const s3Contract = { Body: fs.readFileSync(path.resolve(`${isDev ? '' : 'src/'}contracts/dist/contract.js`))}
-
     await lambda.invoke({ // Call after the s3 lookup to ensure we've actually got a contract to work with
       FunctionName: `${process.env.SERVICE_NAME}-dev-checkContractPrivate`,
       InvocationType: 'Event',
@@ -89,6 +80,12 @@ export default async (event, context) => {
 
     const signerKeypair = Keypair.fromSecret(signerSecret)
 
+    // Is including the turrets array as a param an attack vector? Could you pay yourself a fee?
+      // Each turing server will check to ensure they are paid requiring all turing fees to exist
+      // Only attack I see is if there are extra turrets which are not valid signers for the contract
+
+    // Only accept the forwarded body from the collation endpoint to avoid malicious turret fees
+
     const contractTurrets = await s3.getObjectTagging({
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: event.pathParameters.hash,
@@ -106,7 +103,7 @@ export default async (event, context) => {
       InvocationType: 'RequestResponse',
       LogType: 'None',
       Payload: JSON.stringify({
-        script: s3Contract.Body.toString('utf8'), // Passing the whole script in string form isn't awesome, maybe the payload should be a buffer? Or the contract should load itself from a url
+        hash: event.pathParameters.hash,
         body: {
           request: JSON.parse(event.body),
           turrets: turretsContractData

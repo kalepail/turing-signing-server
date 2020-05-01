@@ -23,24 +23,28 @@ export default async (event, context) => {
       WHERE contract = '${event.hash}'
     `).then((data) => get(data, 'rows[0]'))
 
-    if (moment( parseInt(contractMeta.nextdedupe, 10) ).isBefore()) {
+    if (moment(parseInt(contractMeta.nextdedupe, 10)).isBefore()) {
       console.log('Run Dedupe')
 
       await pgClient.query(`
         update contracts set
           pendingtxns = array(select distinct unnest(pendingtxns)),
-          nextdedupe = ${parseInt(moment().add(1, 'minute').format('x'), 10)}
+          nextdedupe = ${
+            parseInt(moment().add(1, 'minute').format('x'), 10) // Dedupe every minute
+          }
         WHERE contract = '${event.hash}'
       `)
     }
 
-    if (moment( parseInt(contractMeta.nextflush, 10) ).isBefore()) {
+    if (moment(parseInt(contractMeta.nextflush, 10)).isBefore()) {
       console.log('Run Flush')
 
       await pgClient.query(`
         update contracts set
           pendingtxns = NULL,
-          nextflush = ${parseInt(moment().add(1, 'hour').format('x'), 10)}
+          nextflush = ${
+            parseInt(moment().add(1, 'hour').format('x'), 10) // Flush every hour
+          }
         WHERE contract = '${event.hash}'
       `)
     }
@@ -56,8 +60,6 @@ export default async (event, context) => {
     //   .then((data) => true)
     //   .catch((err) => false)
     // }, {concurrency: 1})
-
-    console.log(contractMeta)
 
     return {
       isError: false,

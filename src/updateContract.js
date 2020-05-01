@@ -1,5 +1,6 @@
 import AWS from 'aws-sdk'
 import { map } from 'lodash'
+import Promise from 'bluebird'
 
 import { headers, parseError } from './js/utils'
 
