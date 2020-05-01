@@ -31,29 +31,11 @@ export default async (event, context) => {
     }).promise()
     .then(({TagSet}) => map(TagSet, (tag) => Buffer.from(tag.Value, 'base64').toString('utf8')))
 
-    // const turretsContractData = await Promise.map(contractTurrets, async (turret) =>
-    //   axios.get(`${turret}/contract/${event.pathParameters.hash}`)
-    //   .then(({data}) => data)
-    //   .catch(() => console.error( // Don't error out if a turingSigningServer request fails
-    //       err.response
-    //       ? err.response.statusText
-    //         || err.response.data
-    //       : err
-    //     )
-    //   )
-    // ).then((data) => compact(data))  // Remove failed requests
-
     // Not forwarding turretsContractData as I think it opens an attack vector for bad fees to be encoded without any way to check
       // Only exception would be if a user were paying turing fees not the contract
 
     const contractTurretResponses = await Promise.map(contractTurrets, async (turret) =>
-      axios.post(`${turret}/contract/${event.pathParameters.hash}/run`,
-      JSON.parse(event.body)
-      // {
-      //   request: JSON.parse(event.body),
-      //   turrets: turretsContractData
-      // }
-      )
+      axios.post(`${turret}/contract/${event.pathParameters.hash}/run`, JSON.parse(event.body))
       .then(({data}) => data)
       .catch((err) => console.error( // Don't error out if a turingSigningServer request fails
           err.response
@@ -68,6 +50,9 @@ export default async (event, context) => {
     .map('xdr')
     .uniq()
     .value()
+
+    if (!xdr.length)
+      throw 'Every turret failed'
 
     if (xdrs.length > 1)
       throw 'Mismatched XDRs'
