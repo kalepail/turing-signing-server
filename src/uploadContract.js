@@ -90,7 +90,7 @@ handler
   }
 }))
 .use({
-  async before(handler, next) {
+  async before(handler) {
     if (
       handler.event.body.contract.mimetype !== 'application/javascript'
     ) throw 'Contract must be JavaScript'
@@ -114,7 +114,7 @@ handler
       || signerSecret
     ) throw 'Contract already exists'
 
-    next()
+    return
   }
 })
 .use({

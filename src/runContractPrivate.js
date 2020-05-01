@@ -26,9 +26,21 @@ export default async (event, context) => {
   }
 
   catch(err) {
+    const error =
+    typeof err === 'string'
+    ? err
+    : err.response
+      && err.response.data
+    ? err.response.data
+    : err.response
+    ? err.response
+    : err.message
+    ? err.message
+    : undefined
+
     return {
       isError: true,
-      message: err.message
+      message: error
     }
   }
 

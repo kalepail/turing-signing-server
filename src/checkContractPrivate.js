@@ -29,11 +29,13 @@ export default async (event, context) => {
     })
 
     const liveTxns = await new Promise.map(uniqTxns, (txn) => { // Gotta watch for rate limits, this should probably be throttled to 1 request per second
+      const [time, hash] = txn.split(':')
+
       return server
       .transactions()
-      .transaction(txn)
+      .transaction(hash)
       .call()
-      .then((txn) => txn.id)
+      .then(() => hash)
       .catch(() => null)
     }, {concurrency: 1})
     .then((data) => compact(data))
@@ -59,7 +61,7 @@ export default async (event, context) => {
     const flushList = Object.assign([], liveTxns, expiredTxns)
 
     if (flushList.length) {
-      console.log(`Run flush on ${flushList.length} txns`)
+      console.log(`Flush ${flushList.length} txns`)
 
       await pgClient.query(`
         update contracts set
@@ -93,7 +95,3 @@ export default async (event, context) => {
 // Immediately flush if a txn exists on the blockchain (incurs the cost of looking that data up)
 // Dedupe if it's been 10 minutes since last dedupe
 // Flush unique if it's been 1 hour since last unique flush (may flush very recent submissions)
-
-// update contracts set
-//   pendingtxns = (select array_agg(distinct e) from unnest(pendingtxns || '{${transaction.hash().toString('hex')}}') e)
-// where not pendingtxns @> '{${transaction.hash().toString('hex')}}'
