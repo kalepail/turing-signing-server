@@ -126,6 +126,23 @@ functions:
             origin: '*'
             cacheControl: 'public; max-age=14400'
 
+  collateContract:
+    handler: src/collateContract.default
+    environment: ${file(env.yml)}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:GetObjectTagging
+        Resource: arn:aws:s3:::${opt:service}/*
+    timeout: 12
+    events:
+      - http:
+          path: contract/{hash}/collate
+          method: POST
+          cors:
+            origin: '*'
+            cacheControl: 'public; max-age=14400'
+
   runContractPrivate:
     handler: src/runContractPrivate.default
     iamRoleStatements: []
