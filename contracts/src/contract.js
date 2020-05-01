@@ -6,8 +6,6 @@ const XLM = Asset.native()
 const TYLERCOIN = new Asset('TYLERCOIN', contract)
 
 // Ensure fees are acceptable (public contract could have raised them)
-// This contract executes in a VPC so no outgoing requests are permitted
-  // This means no Stellar server calls
 
 export default async ({request, turrets}) => {
   const server = new Server('https://horizon-testnet.stellar.org')

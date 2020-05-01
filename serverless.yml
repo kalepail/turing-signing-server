@@ -6,6 +6,7 @@ plugins:
   - serverless-iam-roles-per-function
   - serverless-webpack
   - serverless-offline
+  - serverless-domain-manager
 
 package:
   individually: true
@@ -18,12 +19,19 @@ custom:
       forceInclude:
         - source-map-support
     packager: npm
+
   serverless-offline:
     useChildProcesses: true
     httpsProtocol: certs
     httpPort: 4000
+
   serverless-iam-roles-per-function:
     defaultInherit: true
+
+  customDomain:
+    domainName: ${opt:service}.stellar.buzz
+    certificateName: ${opt:service}.stellar.buzz
+    createRoute53Record: false
 
 provider:
   name: aws
@@ -55,11 +63,14 @@ functions:
           - s3:PutObjectTagging
         Resource: arn:aws:s3:::${opt:service}/*
     timeout: 9
+    reservedConcurrency: 6
     events:
       - http:
           path: contract/{hash}
           method: POST
-          cors: true
+          cors:
+            origin: '*'
+            cacheControl: 'public; max-age=14400'
 
   updateContract:
     handler: src/updateContract.default
@@ -71,11 +82,14 @@ functions:
           - s3:PutObjectTagging
         Resource: arn:aws:s3:::${opt:service}/*
     timeout: 6
+    reservedConcurrency: 6
     events:
       - http:
           path: contract/{hash}
           method: PUT
-          cors: true
+          cors:
+            origin: '*'
+            cacheControl: 'public; max-age=14400'
 
   getContract:
     handler: src/getContract.default
@@ -86,7 +100,9 @@ functions:
       - http:
           path: contract/{hash}
           method: GET
-          cors: true
+          cors:
+            origin: '*'
+            cacheControl: 'public; max-age=14400'
 
   runContract:
     handler: src/runContract.default
@@ -106,21 +122,13 @@ functions:
       - http:
           path: contract/{hash}/run
           method: POST
-          cors: true
+          cors:
+            origin: '*'
+            cacheControl: 'public; max-age=14400'
 
   runContractPrivate:
     handler: src/runContractPrivate.default
     iamRoleStatements: []
-    # vpc:
-    #   securityGroupIds:
-    #     - sg-ce7591b7
-    #   subnetIds:
-    #     - subnet-0a970206
-    #     - subnet-1a68ef27
-    #     - subnet-3ba56f4d
-    #     - subnet-4ba1be60
-    #     - subnet-4f03ee17
-    #     - subnet-d0422cb5
     timeout: 6
     maximumRetryAttempts: 0
     maximumRecordAgeInSeconds: 0
@@ -130,7 +138,6 @@ functions:
     handler: src/checkContractPrivate.default
     environment: ${file(env.yml)}
     iamRoleStatements: []
-    # timeout: 6
+    timeout: 6
     maximumRetryAttempts: 0
     maximumRecordAgeInSeconds: 0
-    # memorySize: 128

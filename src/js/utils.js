@@ -4,7 +4,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = isDev ? 0 : 1
 
 export const headers = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Credentials': true
+  'Cache-Control': 'public; max-age=14400'
 }
 
 export function parseError(err) {
