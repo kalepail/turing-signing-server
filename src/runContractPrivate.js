@@ -5,6 +5,7 @@ import Promise from 'bluebird'
 AWS.config.setPromisesDependency(Promise)
 
 const s3 = new AWS.S3()
+// const isDev = process.env.NODE_ENV === 'development'
 
 export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
@@ -17,7 +18,7 @@ export default async (event, context) => {
 
     // const fs = require('fs')
     // const path = require('path')
-    // const s3Contract = { Body: fs.readFileSync(path.resolve(`${isDev ? '' : 'src/'}contracts/dist/contract.js`))}
+    // const s3Contract = { Body: fs.readFileSync(path.resolve(`${isDev ? '' : 'src/'}contracts/dist/is-it-raining.js`))}
 
     return {
       isError: false,

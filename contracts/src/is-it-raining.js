@@ -5,16 +5,19 @@ import { get } from 'lodash'
 const contract = 'GAWPG5WMHAA75S7ALQMP4E4E7OI5AMHT6LX2ZEOIQD5RX6FGEEO3B46K'
 // SBJURUWXYBSXIGU46H6CPINEJVBCPKYVP6GJB42L5ZL4QNWP4QQSLQTP
 
-// GDIMIMALHQ6NTLLNRRZIY4A4XGPJP5QGXCZQB5ST7S4CQR4NZMX7UVHD
+// GDLZEVCZOAHRSA7NXSLWWH2HUIKHOCQ2XHP7YQPH7HGQSLGASVG4WF3I
 // GBACA4O5XPFOJUUBFF6G6D4TLA67XUND4FPSUG7I3VZB2WJJ4NRNJ4AV
 // GAYV4RYQZTDWE6REZ2RVS74XR2WJ6OBD3XPS4HUYX344ZRPCSORNESWT
 // GADGR2RQS6D6XJRZYYIXF2346VSAKVTTEJZZLX4ZPUJQVPUQKZER7CMO
 // GBBRHGVC2I5EUF66CREKEIJGYQ5PZ6MUSG2JANPJH453UV2XNAXGFCPK
 
 const XLM = Asset.native()
-const RAINYDAY = new Asset('RAINYDAY', contract)
+const RAINCOIN = new Asset('RAINCOIN', contract)
+const SUNCOIN = new Asset('SUNCOIN', contract)
 
 export default async ({request, turrets}) => {
+  let asset
+
   await axios.get('https://api.darksky.net/forecast/dbc14b6d52ee4325b6c33ef4aac5ae34/35.707030,-83.950370', {
     params: {
       exclude: 'minutely,hourly,daily,alerts,flags'
@@ -24,15 +27,16 @@ export default async ({request, turrets}) => {
     if (
       /rain/gi.test(get(data, 'daily.icon'))
       || /rain/gi.test(get(data, 'summary'))
-    ) return
+    ) asset = RAINCOIN
 
-    throw `It's not raining`
+    else
+      asset = SUNCOIN
   })
 
   const server = new Server('https://horizon-testnet.stellar.org')
 
   const transaction = await server
-  .loadAccount(contract)
+  .loadAccount(request.source)
   .then((account) => {
     return new TransactionBuilder(
       account,
@@ -42,14 +46,13 @@ export default async ({request, turrets}) => {
       }
     )
     .addOperation(Operation.changeTrust({
-      asset: RAINYDAY,
-      source: request.to
+      asset
     }))
     .addOperation(Operation.payment({
       destination: request.to,
-      asset: RAINYDAY,
+      source: contract,
       amount: '1',
-      source: contract
+      asset,
     }))
     .setTimeout(0)
   })
@@ -57,8 +60,8 @@ export default async ({request, turrets}) => {
   for (const turret of turrets) {
     transaction.addOperation(Operation.payment({
       destination: turret.vault,
-      asset: XLM,
       amount: turret.fee,
+      asset: XLM,
     }))
   }
 

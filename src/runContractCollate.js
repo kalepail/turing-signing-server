@@ -51,7 +51,7 @@ export default async (event, context) => {
     .uniq()
     .value()
 
-    if (!xdr.length)
+    if (!xdrs.length)
       throw 'Every turret failed'
 
     if (xdrs.length > 1)
@@ -67,6 +67,7 @@ export default async (event, context) => {
     { // bugged contracts should be skipped if the sig is invalid
       if (schema.checkFeasibility([
         ...signatures,
+        // Bad. Some contracts won't have a source or may have more than one, this should be a unique attribute for this endpoint to augment the request with any additional signers you intend to add
         JSON.parse(event.body).source
       ])) return
 
