@@ -71,12 +71,14 @@ export default async (event, context) => {
       shuffle(contractTurretResponses),
       (response) =>
     { // bugged contracts should be skipped if the sig is invalid
-      if (schema.checkFeasibility([
-        ...addedSigners,
-        // Bad. Some contracts won't have a source or may have more than one, this should be a unique attribute for this endpoint to augment the request with any additional signers you intend to add
-        // JSON.parse(event.body).source
-        ...assumedSigners
-      ])) return
+      // if (schema.checkFeasibility([
+      //   ...addedSigners,
+      //   // Bad. Some contracts won't have a source or may have more than one, this should be a unique attribute for this endpoint to augment the request with any additional signers you intend to add
+      //   // JSON.parse(event.body).source
+      //   ...assumedSigners
+      // ])) return
+      if (addedSigners.length >= event.queryStringParameters.signatures)
+        return
 
       try {
         transaction.addSignature(response.signer, response.signature)
