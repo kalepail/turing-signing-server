@@ -49,12 +49,14 @@
     "@types/aws-lambda": "^8.10.51",
     "aws-sdk": "^2.667.0",
     "axios": "^0.19.2",
+    "bignumber.js": "^9.0.0",
     "bluebird": "^3.7.2",
     "fs": "0.0.1-security",
     "lodash": "^4.17.15",
     "moment": "^2.25.0",
     "pg": "^8.0.3",
     "require-from-string": "^2.0.2",
+    "seedrandom": "^3.0.5",
     "source-map-support": "^0.5.19",
     "stellar-sdk": "^5.0.0"
   }
