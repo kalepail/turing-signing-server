@@ -82,7 +82,7 @@ handler
       fieldNameSize: 8,
       fieldSize: 1000,
       fields: 1,
-      fileSize: 1000000,
+      fileSize: 32e+6, // 32 MB
       files: 1,
       parts: 2,
       headerPairs: 2
