@@ -1,6 +1,6 @@
 import AWS from 'aws-sdk'
 import { Transaction, Networks } from 'stellar-sdk'
-import { chain, map, each, compact, shuffle } from 'lodash'
+import { chain, map, each, compact, shuffle, without } from 'lodash'
 import { inspectTransactionSigners } from '@stellar-expert/tx-signers-inspector'
 import axios from 'axios'
 import Promise from 'bluebird'
@@ -59,21 +59,28 @@ export default async (event, context) => {
 
     const transaction = new Transaction(xdrs[0], Networks[process.env.STELLAR_NETWORK])
     const schema = await inspectTransactionSigners(transaction, { horizon })
-    const signatures = []
+    const assumedSigners = without(
+      schema.getAllPotentialSigners(),
+
+      ...map(contractTurretResponses, 'signer'),
+      event.pathParameters.hash,
+    )
+    const addedSigners = []
 
     each(
       shuffle(contractTurretResponses),
       (response) =>
     { // bugged contracts should be skipped if the sig is invalid
       if (schema.checkFeasibility([
-        ...signatures,
+        ...addedSigners,
         // Bad. Some contracts won't have a source or may have more than one, this should be a unique attribute for this endpoint to augment the request with any additional signers you intend to add
-        JSON.parse(event.body).source
+        // JSON.parse(event.body).source
+        ...assumedSigners
       ])) return
 
       try {
         transaction.addSignature(response.signer, response.signature)
-        signatures.push(response.signer)
+        addedSigners.push(response.signer)
       }
 
       catch(err) {
