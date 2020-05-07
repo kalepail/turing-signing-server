@@ -27,6 +27,8 @@ export default async (event, context) => {
   }
 
   catch(err) {
+    console.error(err)
+
     const error =
     typeof err === 'string'
     ? err
