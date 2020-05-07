@@ -1,6 +1,5 @@
 import { TransactionBuilder, Networks, Asset, BASE_FEE, Operation, Server } from 'stellar-sdk'
 import axios from 'axios'
-import { get } from 'lodash'
 
 const contract = 'GAWPG5WMHAA75S7ALQMP4E4E7OI5AMHT6LX2ZEOIQD5RX6FGEEO3B46K'
 // SBJURUWXYBSXIGU46H6CPINEJVBCPKYVP6GJB42L5ZL4QNWP4QQSLQTP
@@ -23,10 +22,10 @@ export default async ({request, turrets}) => {
       exclude: 'minutely,hourly,daily,alerts,flags'
     }
   })
-  .then(({data}) => {
+  .then(({data: {currently}}) => {
     if (
-      /rain/gi.test(get(data, 'daily.icon'))
-      || /rain/gi.test(get(data, 'summary'))
+      /rain/gi.test(currently.icon)
+      || /rain/gi.test(currently.summary)
     ) asset = RAINCOIN
 
     else
