@@ -1,12 +1,16 @@
 import { Transaction, Networks, Asset, BASE_FEE, Operation } from 'stellar-sdk'
 import BigNumber from 'bignumber.js'
 
-const contractAddress = 'GAVIZKH2TGVSDFOX6UAUX7OTJPGDTXPPDAW5ZEWMYBW7Q7DM34REMMNS'
+// GAVIZKH2TGVSDFOX6UAUX7OTJPGDTXPPDAW5ZEWMYBW7Q7DM34REMMNS
 // SAJ4UYLV6QA26H64JSH2UVRIKFGGJUFYEXVNJJX5ETUQ7VMG6ABDVEUP
 
 // Signers
 // GA2QCC6UTA4C24LBDFBFXNWM53XNVGILKKJDGVUIUQ2FLWHNVM5U3SUB
 // GBZ7AWKPFHH5KVHE7J4CYKCJN7P42LFQIX7VQRBUP67O75VZ4NSBFMOL
+
+// User
+// GDCJF7HQXOXVZ5ARPAX2PZR5ZX3G6YHVAQLGKI7UZOPU33I222RFSTFI
+// SAHXJ5RBXNLTI6DCIQWFMBGQYJXK64L2EGDYEXYJK3C3GQM6L7TCXI6R
 
 const XLM = Asset.native()
 
@@ -17,8 +21,7 @@ async function contract ({request, turrets}) {
     const amount = new BigNumber(op.amount)
 
     if (
-      transaction.source !== contractAddress
-      || transaction.operations.length > 1
+      transaction.operations.length > 1
       || op.type !== 'payment'
       || !op.asset.equals(XLM)
       || amount.gt(100)
