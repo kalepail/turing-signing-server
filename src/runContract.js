@@ -4,6 +4,7 @@ import { Keypair, Networks, Transaction } from 'stellar-sdk'
 import axios from 'axios'
 import { get, map, compact } from 'lodash'
 import moment from 'moment'
+import crypto from 'crypto'
 
 import lambda from './js/lambda'
 import {
@@ -74,6 +75,14 @@ export default async (event, context) => {
       WHERE contract = '${event.pathParameters.hash}'
     `).then((data) => get(data, 'rows[0].signer'))
 
+    const preHashTxn = `${moment().add(process.env.TURING_PENDING_AGE, 'seconds').format('X')}:pre+${crypto.randomBytes(30).toString('hex')}`
+
+    await pgClientSelect.query(`
+      update contracts set
+        pendingtxns = array_append(pendingtxns, '${preHashTxn}')
+      where contract = '${event.pathParameters.hash}'
+    `)
+
     await pgClientSelect.release()
 
     const signerKeypair = Keypair.fromSecret(signerSecret)
@@ -118,6 +127,16 @@ export default async (event, context) => {
     await pgClientUpdate.query(`
       update contracts set
         pendingtxns = array_append(pendingtxns, '${moment().add(process.env.TURING_PENDING_AGE, 'seconds').format('X')}:${transaction.hash().toString('hex')}')
+      where contract = '${event.pathParameters.hash}'
+    `)
+
+    await pgClientUpdate.query(`
+      update contracts set
+        pendingtxns = (
+          select array_agg(elem)
+            from contracts, unnest(pendingtxns) elem
+          where elem <> all(array['${preHashTxn}'])
+        )
       where contract = '${event.pathParameters.hash}'
     `)
 
