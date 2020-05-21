@@ -8,7 +8,6 @@ import crypto from 'crypto'
 
 import lambda from './js/lambda'
 import {
-  isDev,
   headers,
   parseError
 } from './js/utils'

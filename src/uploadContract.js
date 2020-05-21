@@ -17,6 +17,9 @@ import Pool from './js/pg'
 
 // Should/could this be a collation endpoint which takes the turrets and forwards on the contract to the other turrets and sends back the responses in an array?
 
+// [{"name":"to","type":"string","description":"Where should we send TYLERCOIN to?","rule":"Must be a valid Stellar address"},{"name":"source","type":"string","description":"What's the source account for this transaction?","rule":"Must be a valid Stellar address, often the same as the `to` address"},{"name":"amount","type":"string","description":"TYLERCOIN is purchased 1:1 for XLM. How much do you want to pay & receive?","rule":"Must be a valid numerical amount above any TSS signing fee for this contract"}]
+// W3sibmFtZSI6InRvIiwidHlwZSI6InN0cmluZyIsImRlc2NyaXB0aW9uIjoiV2hlcmUgc2hvdWxkIHdlIHNlbmQgVFlMRVJDT0lOIHRvPyIsInJ1bGUiOiJNdXN0IGJlIGEgdmFsaWQgU3RlbGxhciBhZGRyZXNzIn0seyJuYW1lIjoic291cmNlIiwidHlwZSI6InN0cmluZyIsImRlc2NyaXB0aW9uIjoiV2hhdCdzIHRoZSBzb3VyY2UgYWNjb3VudCBmb3IgdGhpcyB0cmFuc2FjdGlvbj8iLCJydWxlIjoiTXVzdCBiZSBhIHZhbGlkIFN0ZWxsYXIgYWRkcmVzcywgb2Z0ZW4gdGhlIHNhbWUgYXMgdGhlIGB0b2AgYWRkcmVzcyJ9LHsibmFtZSI6ImFtb3VudCIsInR5cGUiOiJzdHJpbmciLCJkZXNjcmlwdGlvbiI6IlRZTEVSQ09JTiBpcyBwdXJjaGFzZWQgMToxIGZvciBYTE0uIEhvdyBtdWNoIGRvIHlvdSB3YW50IHRvIHBheSAmIHJlY2VpdmU/IiwicnVsZSI6Ik11c3QgYmUgYSB2YWxpZCBudW1lcmljYWwgYW1vdW50IGFib3ZlIGFueSBUU1Mgc2lnbmluZyBmZWUgZm9yIHRoaXMgY29udHJhY3QifV0=
+
 AWS.config.setPromisesDependency(Promise)
 
 const s3 = new AWS.S3()
@@ -39,6 +42,9 @@ const originalHandler = async (event) => {
       StorageClass: 'STANDARD',
       CacheControl: 'public; max-age=31536000',
       ACL: 'public-read',
+      Metadata: {
+        Fields: event.body.fields
+      },
       Tagging
     }).promise()
 
@@ -81,10 +87,10 @@ handler
     limits: {
       fieldNameSize: 8,
       fieldSize: 1000,
-      fields: 1,
+      fields: 2,
       fileSize: 32e+6, // 32 MB
       files: 1,
-      parts: 2,
+      parts: 3,
       headerPairs: 2
     }
   }
