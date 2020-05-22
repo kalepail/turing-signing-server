@@ -37,7 +37,7 @@ export default async (event, context) => {
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: event.pathParameters.hash,
     }).promise()
-    .then(({Metadata: {fields}}) => JSON.parse(Buffer.from(fields, 'base64').toString('utf8')))
+    .then(({Metadata: {fields}}) => fields ? JSON.parse(Buffer.from(fields, 'base64').toString('utf8')) : undefined)
 
     const signerKeypair = Keypair.fromSecret(signerSecret)
 
