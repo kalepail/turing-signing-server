@@ -33,11 +33,14 @@ export default async (event, context) => {
 
     await pgClient.release()
 
-    const fields = await s3.headObject({
+    const {fields, contract} = await s3.headObject({
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: event.pathParameters.hash,
     }).promise()
-    .then(({Metadata: {fields}}) => fields ? JSON.parse(Buffer.from(fields, 'base64').toString('utf8')) : undefined)
+    .then(({Metadata: {fields, contract}}) => ({
+      fields: fields ? JSON.parse(Buffer.from(fields, 'base64').toString('utf8')) : undefined,
+      contract
+    }))
 
     const signerKeypair = Keypair.fromSecret(signerSecret)
 
@@ -45,6 +48,7 @@ export default async (event, context) => {
       headers,
       statusCode: 200,
       body: JSON.stringify({
+        contract,
         vault: process.env.TURING_VAULT_ADDRESS,
         signer: signerKeypair.publicKey(),
         fee: process.env.TURING_RUN_FEE,

@@ -63,6 +63,8 @@ functions:
           - s3:PutObjectTagging
         Resource: arn:aws:s3:::${opt:service}/*
     timeout: 9
+    maximumRetryAttempts: 0
+    maximumRecordAgeInSeconds: 0
     reservedConcurrency: 6
     events:
       - http:
@@ -82,6 +84,8 @@ functions:
           - s3:PutObjectTagging
         Resource: arn:aws:s3:::${opt:service}/*
     timeout: 6
+    maximumRetryAttempts: 0
+    maximumRecordAgeInSeconds: 0
     reservedConcurrency: 6
     events:
       - http:
@@ -96,6 +100,8 @@ functions:
     environment: ${file(env.yml)}
     iamRoleStatements: []
     timeout: 3
+    maximumRetryAttempts: 0
+    maximumRecordAgeInSeconds: 0
     events:
       - http:
           path: contract/{hash}
@@ -118,6 +124,8 @@ functions:
         Resource: '*'
     timeout: 9
     reservedConcurrency: 9
+    maximumRetryAttempts: 0
+    maximumRecordAgeInSeconds: 0
     events:
       - http:
           path: contract/{hash}/run
@@ -135,6 +143,8 @@ functions:
           - s3:GetObjectTagging
         Resource: arn:aws:s3:::${opt:service}/*
     timeout: 12
+    maximumRetryAttempts: 0
+    maximumRecordAgeInSeconds: 0
     events:
       - http:
           path: contract/{hash}/run/collate
@@ -146,15 +156,15 @@ functions:
   runContractPrivate:
     handler: src/runContractPrivate.default
     iamRoleStatements: []
-    timeout: 6
     maximumRetryAttempts: 0
     maximumRecordAgeInSeconds: 0
     memorySize: 128
+    timeout: 6
 
   checkContractPrivate:
     handler: src/checkContractPrivate.default
     environment: ${file(env.yml)}
     iamRoleStatements: []
-    timeout: 6
     maximumRetryAttempts: 0
     maximumRecordAgeInSeconds: 0
+    timeout: 6

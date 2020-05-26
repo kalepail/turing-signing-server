@@ -1,7 +1,14 @@
 import AWS from 'aws-sdk'
 import { Transaction, Networks } from 'stellar-sdk'
-import { chain, map, each, compact, shuffle, without } from 'lodash'
-import { inspectTransactionSigners } from '@stellar-expert/tx-signers-inspector'
+import {
+  chain,
+  map,
+  each,
+  compact,
+  shuffle,
+  // without
+} from 'lodash'
+// import { inspectTransactionSigners } from '@stellar-expert/tx-signers-inspector'
 import axios from 'axios'
 import Promise from 'bluebird'
 
@@ -10,7 +17,7 @@ import { isDev, headers, parseError } from './js/utils'
 AWS.config.setPromisesDependency(Promise)
 
 const s3 = new AWS.S3()
-const horizon = process.env.STELLAR_NETWORK === 'TESTNET' ? 'https://horizon-testnet.stellar.org' : 'https://horizon.stellar.org'
+// const horizon = process.env.STELLAR_NETWORK === 'TESTNET' ? 'https://horizon-testnet.stellar.org' : 'https://horizon.stellar.org'
 
 // Support multisig on XLM payment accounts
 // If response isn't a valid signed XDR ready for submission error out
@@ -58,13 +65,13 @@ export default async (event, context) => {
       throw 'Mismatched XDRs'
 
     const transaction = new Transaction(xdrs[0], Networks[process.env.STELLAR_NETWORK])
-    const schema = await inspectTransactionSigners(transaction, { horizon })
-    const assumedSigners = without(
-      schema.getAllPotentialSigners(),
+    // const schema = await inspectTransactionSigners(transaction, { horizon })
+    // const assumedSigners = without(
+    //   schema.getAllPotentialSigners(),
 
-      ...map(contractTurretResponses, 'signer'),
-      event.pathParameters.hash,
-    )
+    //   ...map(contractTurretResponses, 'signer'),
+    //   event.pathParameters.hash,
+    // )
     const addedSigners = []
 
     each(

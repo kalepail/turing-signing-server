@@ -6,6 +6,7 @@ import httpHeaderNormalizer from '@middy/http-header-normalizer'
 import doNotWaitForEmptyEventLoop from '@middy/do-not-wait-for-empty-event-loop'
 import Promise from 'bluebird'
 import { map } from 'lodash'
+import shajs from 'sha.js'
 
 import { headers, parseError } from './js/utils'
 import Pool from './js/pg'
@@ -24,6 +25,7 @@ const s3 = new AWS.S3()
 const originalHandler = async (event) => {
   try {
     const signer = Keypair.random()
+    const codeHash = shajs('sha256').update(event.body.contract.content).digest('hex')
 
     const Tagging = map(
       Buffer.from(event.body.turrets, 'base64').toString('utf8').split(','),
@@ -32,7 +34,7 @@ const originalHandler = async (event) => {
 
     await s3.putObject({
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: event.pathParameters.hash,
+      Key: codeHash,
       Body: event.body.contract.content,
       ContentType: event.body.contract.mimetype,
       ContentLength: event.body.contract.content.length,
@@ -40,7 +42,8 @@ const originalHandler = async (event) => {
       CacheControl: 'public; max-age=31536000',
       ACL: 'public-read',
       Metadata: event.body.fields ? {
-        Fields: event.body.fields
+        Fields: event.body.fields,
+        Contract: event.pathParameters.hash
       } : undefined,
       Tagging
     }).promise()
@@ -49,7 +52,7 @@ const originalHandler = async (event) => {
 
     await pgClient.query(`
       INSERT INTO contracts (contract, signer)
-      SELECT '${event.pathParameters.hash}', '${signer.secret()}'
+      SELECT '${codeHash}', '${signer.secret()}'
     `)
 
     await pgClient.release()
@@ -58,6 +61,7 @@ const originalHandler = async (event) => {
       headers,
       statusCode: 200,
       body: JSON.stringify({
+        hash: codeHash,
         vault: process.env.TURING_VAULT_ADDRESS,
         signer: signer.publicKey(),
         fee: process.env.TURING_RUN_FEE
@@ -98,24 +102,24 @@ handler
       handler.event.body.contract.mimetype !== 'application/javascript'
     ) throw 'Contract must be JavaScript'
 
-    const s3Contract = await s3.headObject({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: handler.event.pathParameters.hash,
-    }).promise().catch(() => null)
+    // const s3Contract = await s3.headObject({
+    //   Bucket: process.env.AWS_BUCKET_NAME,
+    //   Key: handler.event.pathParameters.hash,
+    // }).promise().catch(() => null)
 
-    const pgClient = await Pool.connect()
+    // const pgClient = await Pool.connect()
 
-    const signerSecret = await pgClient.query(`
-      SELECT contract FROM contracts
-      WHERE contract = '${handler.event.pathParameters.hash}'
-    `).then((data) => data.rows[0]).catch(() => null)
+    // const signerSecret = await pgClient.query(`
+    //   SELECT contract FROM contracts
+    //   WHERE contract = '${handler.event.pathParameters.hash}'
+    // `).then((data) => data.rows[0]).catch(() => null)
 
-    await pgClient.release()
+    // await pgClient.release()
 
-    if (
-      s3Contract
-      || signerSecret
-    ) throw 'Contract already exists'
+    // if (
+    //   s3Contract
+    //   || signerSecret
+    // ) throw 'Contract already exists'
 
     return
   }

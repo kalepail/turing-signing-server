@@ -58,6 +58,7 @@
     "pg": "^8.0.3",
     "require-from-string": "^2.0.2",
     "seedrandom": "^3.0.5",
+    "sha.js": "^2.4.11",
     "source-map-support": "^0.5.19",
     "stellar-sdk": "^5.0.0"
   }

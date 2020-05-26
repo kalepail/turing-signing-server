@@ -17,7 +17,7 @@ const s3 = new AWS.S3()
 
 const originalHandler = async (event) => {
   try {
-    const keypair = Keypair.fromPublicKey(event.pathParameters.hash)
+    const keypair = Keypair.fromPublicKey(event.body.contract)
 
     if (!keypair.verify(Buffer.from(event.body.turrets, 'base64'), Buffer.from(event.body.signature, 'base64')))
       throw 'Invalid signature'
@@ -68,10 +68,10 @@ handler
     limits: {
       fieldNameSize: 9,
       fieldSize: 1000,
-      fields: 2,
+      fields: 3,
       fileSize: 0,
       files: 0,
-      parts: 2,
+      parts: 3,
       headerPairs: 1
     }
   }
