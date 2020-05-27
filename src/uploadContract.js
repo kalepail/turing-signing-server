@@ -102,24 +102,24 @@ handler
       handler.event.body.contract.mimetype !== 'application/javascript'
     ) throw 'Contract must be JavaScript'
 
-    // const s3Contract = await s3.headObject({
-    //   Bucket: process.env.AWS_BUCKET_NAME,
-    //   Key: handler.event.pathParameters.hash,
-    // }).promise().catch(() => null)
+    const s3Contract = await s3.headObject({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: handler.event.pathParameters.hash,
+    }).promise().catch(() => null)
 
-    // const pgClient = await Pool.connect()
+    const pgClient = await Pool.connect()
 
-    // const signerSecret = await pgClient.query(`
-    //   SELECT contract FROM contracts
-    //   WHERE contract = '${handler.event.pathParameters.hash}'
-    // `).then((data) => data.rows[0]).catch(() => null)
+    const signerSecret = await pgClient.query(`
+      SELECT contract FROM contracts
+      WHERE contract = '${handler.event.pathParameters.hash}'
+    `).then((data) => data.rows[0]).catch(() => null)
 
-    // await pgClient.release()
+    await pgClient.release()
 
-    // if (
-    //   s3Contract
-    //   || signerSecret
-    // ) throw 'Contract already exists'
+    if (
+      s3Contract
+      || signerSecret
+    ) throw 'Contract already exists'
 
     return
   }
