@@ -25,7 +25,7 @@ const s3 = new AWS.S3()
 const originalHandler = async (event) => {
   try {
     const signer = Keypair.random()
-    const codeHash = shajs('sha256').update(event.body.contract.content).digest('hex')
+    const codeHash = shajs('sha256').update(event.body.file.content).digest('hex')
 
     const Tagging = map(
       Buffer.from(event.body.turrets, 'base64').toString('utf8').split(','),
@@ -35,15 +35,15 @@ const originalHandler = async (event) => {
     await s3.putObject({
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: codeHash,
-      Body: event.body.contract.content,
-      ContentType: event.body.contract.mimetype,
-      ContentLength: event.body.contract.content.length,
+      Body: event.body.file.content,
+      ContentType: event.body.file.mimetype,
+      ContentLength: event.body.file.content.length,
       StorageClass: 'STANDARD',
       CacheControl: 'public; max-age=31536000',
       ACL: 'public-read',
       Metadata: event.body.fields ? {
         Fields: event.body.fields,
-        Contract: event.pathParameters.hash
+        Contract: event.body.contract
       } : undefined,
       Tagging
     }).promise()
@@ -88,10 +88,10 @@ handler
     limits: {
       fieldNameSize: 8,
       fieldSize: 1000,
-      fields: 2,
+      fields: 3,
       fileSize: 32e+6, // 32 MB
       files: 1,
-      parts: 3,
+      parts: 4,
       headerPairs: 2
     }
   }
@@ -99,10 +99,10 @@ handler
 .use({
   async before(handler) {
     if (
-      handler.event.body.contract.mimetype !== 'application/javascript'
+      handler.event.body.file.mimetype !== 'application/javascript'
     ) throw 'Contract must be JavaScript'
 
-    const codeHash = shajs('sha256').update(handler.event.body.contract.content).digest('hex')
+    const codeHash = shajs('sha256').update(handler.event.body.file.content).digest('hex')
 
     const s3Contract = await s3.headObject({
       Bucket: process.env.AWS_BUCKET_NAME,

@@ -68,7 +68,7 @@ functions:
     reservedConcurrency: 6
     events:
       - http:
-          path: contract/{hash}
+          path: contract
           method: POST
           cors:
             origin: '*'
