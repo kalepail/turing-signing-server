@@ -74,10 +74,10 @@ handler
     limits: {
       fieldNameSize: 9,
       fieldSize: 1000,
-      fields: 3,
+      fields: 2,
       fileSize: 0,
       files: 0,
-      parts: 3,
+      parts: 2,
       headerPairs: 1
     }
   }
