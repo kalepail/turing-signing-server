@@ -30,18 +30,12 @@ export default async (event, context) => {
     }).promise()
     .then(({TagSet}) => map(TagSet, (tag) => Buffer.from(tag.Value, 'base64').toString('utf8')))
 
-    const contract = await s3.headObject({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: event.pathParameters.hash,
-    }).promise()
-    .then(({Metadata: {contract}}) => contract)
-
     await lambda.invoke({ // Call after the s3 lookup to ensure we've actually got a contract to work with
       FunctionName: `${process.env.SERVICE_NAME}-dev-checkContractPrivate`,
       InvocationType: 'Event',
       LogType: 'None',
       Payload: JSON.stringify({
-        hash: contract
+        hash: event.pathParameters.hash
       })
     }).promise()
 
@@ -109,7 +103,7 @@ export default async (event, context) => {
       InvocationType: 'RequestResponse',
       LogType: 'None',
       Payload: JSON.stringify({
-        hash: contract,
+        hash: event.pathParameters.hash,
         body: {
           request: JSON.parse(event.body),
           turrets: turretsContractData

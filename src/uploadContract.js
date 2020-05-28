@@ -102,16 +102,18 @@ handler
       handler.event.body.contract.mimetype !== 'application/javascript'
     ) throw 'Contract must be JavaScript'
 
+    const codeHash = shajs('sha256').update(handler.event.body.contract.content).digest('hex')
+
     const s3Contract = await s3.headObject({
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: handler.event.pathParameters.hash,
+      Key: codeHash,
     }).promise().catch(() => null)
 
     const pgClient = await Pool.connect()
 
     const signerSecret = await pgClient.query(`
       SELECT contract FROM contracts
-      WHERE contract = '${handler.event.pathParameters.hash}'
+      WHERE contract = '${codeHash}'
     `).then((data) => data.rows[0]).catch(() => null)
 
     await pgClient.release()
