@@ -1,10 +1,11 @@
 import AWS from 'aws-sdk'
 import Promise from 'bluebird'
-import { Keypair, Networks, Transaction } from 'stellar-sdk'
+import { Keypair, Networks, Transaction, Asset } from 'stellar-sdk'
 import axios from 'axios'
-import { get, map, difference } from 'lodash'
+import { get, map, difference, find } from 'lodash'
 import moment from 'moment'
 import crypto from 'crypto'
+import BigNumber from 'bignumber.js'
 
 import lambda from './js/lambda'
 import {
@@ -137,6 +138,14 @@ export default async (event, context) => {
     })
 
     const transaction = new Transaction(xdr, Networks[process.env.STELLAR_NETWORK])
+
+    if (!find(transaction._operations, {
+      type: 'payment',
+      destination: process.env.TURING_VAULT_ADDRESS,
+      amount: new BigNumber(process.env.TURING_RUN_FEE).toFixed(7),
+      asset: Asset.native()
+    })) throw 'Missing or invalid fee payment'
+
     const signature = signerKeypair.sign(transaction.hash()).toString('base64')
 
     const pgClientUpdate = await Pool.connect()
