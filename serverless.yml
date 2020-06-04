@@ -1,6 +1,6 @@
 tenant: tyvdh
 app: turing-signing-server
-service: ${opt:service}
+service: turing-signing-server-${opt:i}
 
 plugins:
   - serverless-iam-roles-per-function
@@ -23,22 +23,24 @@ custom:
   serverless-offline:
     useChildProcesses: true
     httpsProtocol: certs
-    httpPort: 4000
+    httpPort: 400${opt:i}
+    lambdaPort: 300${opt:i}
 
   serverless-iam-roles-per-function:
     defaultInherit: true
 
   customDomain:
-    domainName: ${opt:service}.stellar.buzz
-    certificateName: ${opt:service}.stellar.buzz
+    domainName: turing-signing-server-${opt:i}.stellar.buzz
+    certificateName: turing-signing-server-${opt:i}.stellar.buzz
     createRoute53Record: false
 
 provider:
   name: aws
   environment:
-    SERVICE_NAME: ${opt:service}
-    PG_DATABASE: ${opt:service}
-    AWS_BUCKET_NAME: ${opt:service}
+    SERVICE_NAME: turing-signing-server-${opt:i}
+    PG_DATABASE: turing-signing-server-${opt:i}
+    AWS_BUCKET_NAME: turing-signing-server-${opt:i}
+    i: ${opt:i}
   runtime: nodejs12.x
   region: us-east-1
   tracing:
@@ -61,12 +63,14 @@ functions:
           - s3:PutObject
           - s3:PutObjectAcl
           - s3:PutObjectTagging
-        Resource: arn:aws:s3:::${opt:service}/*
+        Resource: arn:aws:s3:::turing-signing-server-${opt:i}/*
     timeout: 9
+    maximumRetryAttempts: 0
+    maximumRecordAgeInSeconds: 0
     reservedConcurrency: 6
     events:
       - http:
-          path: contract/{hash}
+          path: contract
           method: POST
           cors:
             origin: '*'
@@ -80,8 +84,10 @@ functions:
         Action:
           - s3:DeleteObjectTagging
           - s3:PutObjectTagging
-        Resource: arn:aws:s3:::${opt:service}/*
+        Resource: arn:aws:s3:::turing-signing-server-${opt:i}/*
     timeout: 6
+    maximumRetryAttempts: 0
+    maximumRecordAgeInSeconds: 0
     reservedConcurrency: 6
     events:
       - http:
@@ -96,6 +102,8 @@ functions:
     environment: ${file(env.yml)}
     iamRoleStatements: []
     timeout: 3
+    maximumRetryAttempts: 0
+    maximumRecordAgeInSeconds: 0
     events:
       - http:
           path: contract/{hash}
@@ -111,13 +119,15 @@ functions:
       - Effect: Allow
         Action:
           - s3:GetObjectTagging
-        Resource: arn:aws:s3:::${opt:service}/*
+        Resource: arn:aws:s3:::turing-signing-server-${opt:i}/*
       - Effect: Allow
         Action:
           - lambda:InvokeFunction
         Resource: '*'
     timeout: 9
     reservedConcurrency: 9
+    maximumRetryAttempts: 0
+    maximumRecordAgeInSeconds: 0
     events:
       - http:
           path: contract/{hash}/run
@@ -133,8 +143,10 @@ functions:
       - Effect: Allow
         Action:
           - s3:GetObjectTagging
-        Resource: arn:aws:s3:::${opt:service}/*
+        Resource: arn:aws:s3:::turing-signing-server-${opt:i}/*
     timeout: 12
+    maximumRetryAttempts: 0
+    maximumRecordAgeInSeconds: 0
     events:
       - http:
           path: contract/{hash}/run/collate
@@ -146,15 +158,15 @@ functions:
   runContractPrivate:
     handler: src/runContractPrivate.default
     iamRoleStatements: []
-    timeout: 6
     maximumRetryAttempts: 0
     maximumRecordAgeInSeconds: 0
     memorySize: 128
+    timeout: 6
 
   checkContractPrivate:
     handler: src/checkContractPrivate.default
     environment: ${file(env.yml)}
     iamRoleStatements: []
-    timeout: 6
     maximumRetryAttempts: 0
     maximumRecordAgeInSeconds: 0
+    timeout: 6

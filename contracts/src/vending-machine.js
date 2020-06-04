@@ -1,6 +1,8 @@
 import { TransactionBuilder, Networks, Asset, BASE_FEE, Operation, Server } from 'stellar-sdk'
 
 const contract = 'GCNANNNLGDICM5NJOT7QD7MLW34M4WLJPTNOAXWEAR4CE4LO23FZ5WDR'
+// 5e14318ef516fa1b7aa517008f01e160035dde100fac999d3d18d00df43bb3ce
+
 const vault = 'GBHKNCNOMBHHLHBLUTGUSKJPTHDQGJQLAICXFE4SMFAKOO5WO54BJJOR'
 const XLM = Asset.native()
 const TYLERCOIN = new Asset('TYLERCOIN', contract)

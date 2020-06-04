@@ -17,7 +17,13 @@ const s3 = new AWS.S3()
 
 const originalHandler = async (event) => {
   try {
-    const keypair = Keypair.fromPublicKey(event.pathParameters.hash)
+    const contract = await s3.headObject({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: event.pathParameters.hash,
+    }).promise()
+    .then(({Metadata: {contract}}) => contract)
+
+    const keypair = Keypair.fromPublicKey(contract)
 
     if (!keypair.verify(Buffer.from(event.body.turrets, 'base64'), Buffer.from(event.body.signature, 'base64')))
       throw 'Invalid signature'

@@ -2,12 +2,13 @@ import AWS from 'aws-sdk'
 import Promise from 'bluebird'
 import { Keypair, Networks, Transaction } from 'stellar-sdk'
 import axios from 'axios'
-import { get, map, compact } from 'lodash'
+import { get, map, compact, difference } from 'lodash'
 import moment from 'moment'
 import crypto from 'crypto'
 
 import lambda from './js/lambda'
 import {
+  isDev,
   headers,
   parseError
 } from './js/utils'
@@ -92,7 +93,18 @@ export default async (event, context) => {
 
     // Only accept the forwarded body from the collation endpoint to avoid malicious turret fees
 
-    const turretsContractData = await Promise.map(contractTurrets, async (turret) =>
+    const selectedTurrets = event.headers['X-Turrets'] ? JSON.parse(Buffer.from(event.headers['X-Turrets'], 'base64').toString()) : contractTurrets
+
+    console.log(selectedTurrets)
+
+    if (difference(selectedTurrets, contractTurrets).length) {
+      if (isDev)
+        console.error('selectedTurrets contains urls not present in contractTurrets')
+      else
+        throw 'selectedTurrets contains urls not present in contractTurrets'
+    }
+
+    const turretsContractData = await Promise.map(selectedTurrets, async (turret) =>
       axios.get(`${turret}/contract/${event.pathParameters.hash}`)
       .then(({data}) => data)
       .catch(() => null) // Don't error out if a turingSigningServer request fails
@@ -130,12 +142,13 @@ export default async (event, context) => {
     `)
 
     await pgClientUpdate.query(`
-      update contracts set
-        pendingtxns = (
-          select array_agg(elem)
-            from contracts, unnest(pendingtxns) elem
-          where elem <> all(array['${preHashTxn}'])
-        )
+      update contracts
+      set pendingtxns = (
+        select array_agg(elem)
+          from contracts, unnest(pendingtxns) elem
+        where contract = '${event.pathParameters.hash}'
+        and elem <> all(array['${preHashTxn}'])
+      )
       where contract = '${event.pathParameters.hash}'
     `)
 

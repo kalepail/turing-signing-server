@@ -6,6 +6,7 @@ import httpHeaderNormalizer from '@middy/http-header-normalizer'
 import doNotWaitForEmptyEventLoop from '@middy/do-not-wait-for-empty-event-loop'
 import Promise from 'bluebird'
 import { map } from 'lodash'
+import shajs from 'sha.js'
 
 import { headers, parseError } from './js/utils'
 import Pool from './js/pg'
@@ -24,6 +25,7 @@ const s3 = new AWS.S3()
 const originalHandler = async (event) => {
   try {
     const signer = Keypair.random()
+    const codeHash = shajs('sha256').update(event.body.file.content).digest('hex')
 
     const Tagging = map(
       Buffer.from(event.body.turrets, 'base64').toString('utf8').split(','),
@@ -32,15 +34,16 @@ const originalHandler = async (event) => {
 
     await s3.putObject({
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: event.pathParameters.hash,
-      Body: event.body.contract.content,
-      ContentType: event.body.contract.mimetype,
-      ContentLength: event.body.contract.content.length,
+      Key: codeHash,
+      Body: event.body.file.content,
+      ContentType: event.body.file.mimetype,
+      ContentLength: event.body.file.content.length,
       StorageClass: 'STANDARD',
       CacheControl: 'public; max-age=31536000',
       ACL: 'public-read',
       Metadata: event.body.fields ? {
-        Fields: event.body.fields
+        Fields: event.body.fields,
+        Contract: event.body.contract
       } : undefined,
       Tagging
     }).promise()
@@ -49,7 +52,7 @@ const originalHandler = async (event) => {
 
     await pgClient.query(`
       INSERT INTO contracts (contract, signer)
-      SELECT '${event.pathParameters.hash}', '${signer.secret()}'
+      SELECT '${codeHash}', '${signer.secret()}'
     `)
 
     await pgClient.release()
@@ -58,6 +61,7 @@ const originalHandler = async (event) => {
       headers,
       statusCode: 200,
       body: JSON.stringify({
+        hash: codeHash,
         vault: process.env.TURING_VAULT_ADDRESS,
         signer: signer.publicKey(),
         fee: process.env.TURING_RUN_FEE
@@ -84,10 +88,10 @@ handler
     limits: {
       fieldNameSize: 8,
       fieldSize: 1000,
-      fields: 2,
+      fields: 3,
       fileSize: 32e+6, // 32 MB
       files: 1,
-      parts: 3,
+      parts: 4,
       headerPairs: 2
     }
   }
@@ -95,19 +99,21 @@ handler
 .use({
   async before(handler) {
     if (
-      handler.event.body.contract.mimetype !== 'application/javascript'
+      handler.event.body.file.mimetype !== 'application/javascript'
     ) throw 'Contract must be JavaScript'
+
+    const codeHash = shajs('sha256').update(handler.event.body.file.content).digest('hex')
 
     const s3Contract = await s3.headObject({
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: handler.event.pathParameters.hash,
+      Key: codeHash,
     }).promise().catch(() => null)
 
     const pgClient = await Pool.connect()
 
     const signerSecret = await pgClient.query(`
       SELECT contract FROM contracts
-      WHERE contract = '${handler.event.pathParameters.hash}'
+      WHERE contract = '${codeHash}'
     `).then((data) => data.rows[0]).catch(() => null)
 
     await pgClient.release()
