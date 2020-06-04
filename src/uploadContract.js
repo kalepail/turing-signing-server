@@ -64,6 +64,11 @@ const originalHandler = async (event) => {
       (turret, i) => `Turret_${i}=${Buffer.from(turret, 'utf8').toString('base64')}`
     ).join('&')
 
+    const Metadata = {Contract: event.body.contract}
+
+    if (event.body.fields)
+      Metadata.Fields = event.body.fields
+
     await s3.putObject({
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: codeHash,
@@ -73,10 +78,7 @@ const originalHandler = async (event) => {
       StorageClass: 'STANDARD',
       CacheControl: 'public; max-age=31536000',
       ACL: 'public-read',
-      Metadata: {
-        Fields: event.body.fields,
-        Contract: event.body.contract
-      },
+      Metadata,
       Tagging
     }).promise()
 

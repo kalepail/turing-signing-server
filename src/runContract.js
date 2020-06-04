@@ -1,6 +1,6 @@
 import AWS from 'aws-sdk'
 import Promise from 'bluebird'
-import { Keypair, Networks, Transaction, Asset } from 'stellar-sdk'
+import { Keypair, Networks, Transaction, Asset, Server } from 'stellar-sdk'
 import axios from 'axios'
 import { get, map, difference, find } from 'lodash'
 import moment from 'moment'
@@ -20,6 +20,8 @@ import Pool from './js/pg'
 
 AWS.config.setPromisesDependency(Promise)
 
+const horizon = process.env.STELLAR_NETWORK === 'TESTNET' ? 'https://horizon-testnet.stellar.org' : 'https://horizon.stellar.org'
+const server = new Server(horizon)
 const s3 = new AWS.S3()
 
 export default async (event, context) => {
@@ -94,13 +96,13 @@ export default async (event, context) => {
 
     await pgClientSelect.release()
 
-    const signerKeypair = Keypair.fromSecret(signerSecret)
-
     // Is including the turrets array as a param an attack vector? Could you pay yourself a fee?
       // Each turing server will check to ensure they are paid requiring all turing fees to exist
       // Only attack I see is if there are extra turrets which are not valid signers for the contract
 
     // Only accept the forwarded body from the collation endpoint to avoid malicious turret fees
+
+    // If a returned XDR has already been submitted throw an error, otherwise we open up a looping vulnerability
 
     const selectedTurrets = event.headers['X-Turrets'] ? JSON.parse(Buffer.from(event.headers['X-Turrets'], 'base64').toString()) : contractTurrets
 
@@ -138,6 +140,7 @@ export default async (event, context) => {
     })
 
     const transaction = new Transaction(xdr, Networks[process.env.STELLAR_NETWORK])
+    const hash = transaction.hash().toString('hex')
 
     if (!find(transaction._operations, {
       type: 'payment',
@@ -146,7 +149,22 @@ export default async (event, context) => {
       asset: Asset.native()
     })) throw 'Missing or invalid fee payment'
 
-    const signature = signerKeypair.sign(transaction.hash()).toString('base64')
+    await server
+    .transactions()
+    .transaction(hash)
+    .call()
+    .catch((err) => err)
+    .then((err) => {
+      if (
+        err.response
+        && err.response.status === 404
+      ) return
+
+      else if (err.response)
+        throw err
+
+      throw 'Transaction has already been submitted'
+    })
 
     const pgClientUpdate = await Pool.connect()
 
@@ -168,6 +186,9 @@ export default async (event, context) => {
     `)
 
     await pgClientUpdate.release()
+
+    const signerKeypair = Keypair.fromSecret(signerSecret)
+    const signature = signerKeypair.sign(transaction.hash()).toString('base64')
 
     return {
       headers,
