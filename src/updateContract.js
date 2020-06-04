@@ -72,7 +72,7 @@ handler
 .use(httpMultipartBodyParser({
   busboy: {
     limits: {
-      fieldNameSize: 9,
+      fieldNameSize: 10,
       fieldSize: 1000,
       fields: 2,
       fileSize: 0,

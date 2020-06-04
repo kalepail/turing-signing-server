@@ -1,12 +1,13 @@
-import { Keypair } from 'stellar-sdk'
+import { Transaction, Keypair, Networks, Asset, Server } from 'stellar-sdk'
 import AWS from 'aws-sdk'
 import middy from '@middy/core'
 import httpMultipartBodyParser from '@middy/http-multipart-body-parser'
 import httpHeaderNormalizer from '@middy/http-header-normalizer'
 import doNotWaitForEmptyEventLoop from '@middy/do-not-wait-for-empty-event-loop'
 import Promise from 'bluebird'
-import { map } from 'lodash'
+import { map, find } from 'lodash'
 import shajs from 'sha.js'
+import BigNumber from 'bignumber.js'
 
 import { headers, parseError } from './js/utils'
 import Pool from './js/pg'
@@ -20,12 +21,43 @@ import Pool from './js/pg'
 
 AWS.config.setPromisesDependency(Promise)
 
+const horizon = process.env.STELLAR_NETWORK === 'TESTNET' ? 'https://horizon-testnet.stellar.org' : 'https://horizon.stellar.org'
+const server = new Server(horizon)
 const s3 = new AWS.S3()
 
 const originalHandler = async (event) => {
   try {
     const signer = Keypair.random()
     const codeHash = shajs('sha256').update(event.body.file.content).digest('hex')
+
+    const transaction = new Transaction(event.body.payment, Networks[process.env.STELLAR_NETWORK])
+    const hash = transaction.hash().toString('hex')
+
+    await server
+    .transactions()
+    .transaction(hash)
+    .call()
+    .catch((err) => err)
+    .then((err) => {
+      if (
+        err.response
+        && err.response.status === 404
+      ) return
+
+      else if (err.response)
+        throw err
+
+      throw 'Transaction has already been submitted'
+    })
+
+    if (!find(transaction._operations, {
+      type: 'payment',
+      destination: process.env.TURING_VAULT_ADDRESS,
+      amount: new BigNumber(process.env.TURING_UPLOAD_FEE).toFixed(7),
+      asset: Asset.native()
+    })) throw 'Missing or invalid fee payment'
+
+    await server.submitTransaction(transaction)
 
     const Tagging = map(
       Buffer.from(event.body.turrets, 'base64').toString('utf8').split(','),
@@ -41,10 +73,10 @@ const originalHandler = async (event) => {
       StorageClass: 'STANDARD',
       CacheControl: 'public; max-age=31536000',
       ACL: 'public-read',
-      Metadata: event.body.fields ? {
+      Metadata: {
         Fields: event.body.fields,
         Contract: event.body.contract
-      } : undefined,
+      },
       Tagging
     }).promise()
 
@@ -86,12 +118,12 @@ handler
 .use(httpMultipartBodyParser({
   busboy: {
     limits: {
-      fieldNameSize: 8,
+      fieldNameSize: 10,
       fieldSize: 1000,
-      fields: 3,
+      fields: 4,
       fileSize: 32e+6, // 32 MB
       files: 1,
-      parts: 4,
+      parts: 5,
       headerPairs: 2
     }
   }
