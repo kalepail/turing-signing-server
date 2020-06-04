@@ -1,14 +1,6 @@
 import AWS from 'aws-sdk'
 import { Transaction, Networks } from 'stellar-sdk'
-import {
-  chain,
-  map,
-  each,
-  compact,
-  shuffle,
-  // without
-} from 'lodash'
-// import { inspectTransactionSigners } from '@stellar-expert/tx-signers-inspector'
+import { chain, map, each, compact, sampleSize } from 'lodash'
 import axios from 'axios'
 import Promise from 'bluebird'
 
@@ -31,8 +23,16 @@ export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
 
   try {
-    const contractTurrets = isDev ? ['https://localhost:4000/dev'] :
-    await s3.getObjectTagging({
+    const signatureCount = parseInt(event.queryStringParameters.signatures || 20, 10)
+    const contractTurrets = isDev
+    ? [
+      'https://localhost:4000/dev',
+      'https://localhost:4001/dev',
+      'https://localhost:4002/dev',
+      'https://localhost:4003/dev',
+      'https://localhost:4004/dev',
+    ]
+    : await s3.getObjectTagging({
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: event.pathParameters.hash,
     }).promise()
@@ -41,8 +41,25 @@ export default async (event, context) => {
     // Not forwarding turretsContractData as I think it opens an attack vector for bad fees to be encoded without any way to check
       // Only exception would be if a user were paying turing fees not the contract
 
-    const contractTurretResponses = await Promise.map(contractTurrets, async (turret) =>
-      axios.post(`${turret}/contract/${event.pathParameters.hash}/run`, JSON.parse(event.body))
+    const selectedTurrets = await Promise.map(contractTurrets, async (turret) =>
+      axios.get(`${turret}/contract/${event.pathParameters.hash}`)
+      .then(() => turret)
+      .catch((err) => console.error( // Don't error out if a turingSigningServer request fails
+          err.response
+          ? err.response.statusText
+            || err.response.data
+          : err
+        )
+      )
+    ).then((data) => compact(data)) // Remove failed requests
+    .then((turrets) => sampleSize(turrets, signatureCount)) // Only make and pay for the requests we need
+
+    const contractTurretResponses = await Promise.map(selectedTurrets, async (turret) =>
+      axios.post(`${turret}/contract/${event.pathParameters.hash}/run`, JSON.parse(event.body), {
+        headers: {
+          'X-Turrets': Buffer.from(JSON.stringify(selectedTurrets)).toString('base64')
+        }
+      })
       .then(({data}) => data)
       .catch((err) => console.error( // Don't error out if a turingSigningServer request fails
           err.response
@@ -53,46 +70,26 @@ export default async (event, context) => {
       )
     ).then((data) => compact(data)) // Remove failed requests
 
+    if (contractTurretResponses.length === 0)
+      throw 'Every turret failed'
+
+    if (contractTurretResponses.length < signatureCount)
+      throw 'Insufficient signatures'
+
     const xdrs = chain(contractTurretResponses)
     .map('xdr')
     .uniq()
     .value()
 
-    if (!xdrs.length)
-      throw 'Every turret failed'
-
     if (xdrs.length > 1)
       throw 'Mismatched XDRs'
 
     const transaction = new Transaction(xdrs[0], Networks[process.env.STELLAR_NETWORK])
-    // const schema = await inspectTransactionSigners(transaction, { horizon })
-    // const assumedSigners = without(
-    //   schema.getAllPotentialSigners(),
 
-    //   ...map(contractTurretResponses, 'signer'),
-    //   event.pathParameters.hash,
-    // )
-    const addedSigners = []
-
-    each(
-      shuffle(contractTurretResponses),
-      (response) =>
-    { // bugged contracts should be skipped if the sig is invalid
-      // if (schema.checkFeasibility([
-      //   ...addedSigners,
-      //   // Bad. Some contracts won't have a source or may have more than one, this should be a unique attribute for this endpoint to augment the request with any additional signers you intend to add
-      //   // JSON.parse(event.body).source
-      //   ...assumedSigners
-      // ])) return
-      if (addedSigners.length >= event.queryStringParameters.signatures)
-        return
-
+    each(contractTurretResponses, (response) => {
       try {
         transaction.addSignature(response.signer, response.signature)
-        addedSigners.push(response.signer)
-      }
-
-      catch(err) {
+      } catch(err) {
         console.error(err)
       }
     })

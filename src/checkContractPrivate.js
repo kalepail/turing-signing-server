@@ -64,13 +64,14 @@ export default async (event, context) => {
       console.log(`Flush ${flushList.length} txns`)
 
       await pgClient.query(`
-        update contracts set
-          pendingtxns = (
-            select array_agg(elem)
-              from contracts, unnest(pendingtxns) elem
-            where elem <> all(array['${flushList.join('\',\'')}'])
-          )
-        WHERE contract = '${event.hash}'
+        update contracts
+        set pendingtxns = (
+          select array_agg(elem)
+            from contracts, unnest(pendingtxns) elem
+          where contract = '${event.hash}'
+          and elem <> all(array['${flushList.join('\',\'')}'])
+        )
+        where contract = '${event.hash}'
       `)
     }
 
