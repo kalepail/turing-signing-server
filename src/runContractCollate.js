@@ -25,7 +25,7 @@ export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
 
   try {
-    const signatureCount = parseInt(event.queryStringParameters.signatures || 20, 10)
+    const signatureCount = parseInt(event.queryStringParameters.signatures, 10)
     const contractTurrets = isDev
     ? [
       'https://localhost:4000/dev',
