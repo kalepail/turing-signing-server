@@ -10,7 +10,7 @@ let options = {
 
 if (isDev) options = {
   ...options,
-  endpoint: `http://localhost:300${process.env.i}`
+  endpoint: `http://localhost:300${process.env.instance}`
 }
 
 export default new AWS.Lambda(options)

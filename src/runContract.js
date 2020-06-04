@@ -2,7 +2,7 @@ import AWS from 'aws-sdk'
 import Promise from 'bluebird'
 import { Keypair, Networks, Transaction } from 'stellar-sdk'
 import axios from 'axios'
-import { get, map, compact, difference } from 'lodash'
+import { get, map, difference } from 'lodash'
 import moment from 'moment'
 import crypto from 'crypto'
 
@@ -25,7 +25,15 @@ export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
 
   try {
-    const contractTurrets = await s3.getObjectTagging({
+    const contractTurrets = isDev
+    ? [
+      'https://localhost:4000/dev',
+      'https://localhost:4001/dev',
+      'https://localhost:4002/dev',
+      'https://localhost:4003/dev',
+      'https://localhost:4004/dev',
+    ]
+    : await s3.getObjectTagging({
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: event.pathParameters.hash,
     }).promise()
@@ -95,8 +103,6 @@ export default async (event, context) => {
 
     const selectedTurrets = event.headers['X-Turrets'] ? JSON.parse(Buffer.from(event.headers['X-Turrets'], 'base64').toString()) : contractTurrets
 
-    console.log(selectedTurrets)
-
     if (difference(selectedTurrets, contractTurrets).length) {
       if (isDev)
         console.error('selectedTurrets contains urls not present in contractTurrets')
@@ -107,8 +113,7 @@ export default async (event, context) => {
     const turretsContractData = await Promise.map(selectedTurrets, async (turret) =>
       axios.get(`${turret}/contract/${event.pathParameters.hash}`)
       .then(({data}) => data)
-      .catch(() => null) // Don't error out if a turingSigningServer request fails
-    ).then((data) => compact(data)) // if anything errors out, remove that from the response
+    )
 
     const xdr = await lambda.invoke({
       FunctionName: `${process.env.SERVICE_NAME}-dev-runContractPrivate`,
@@ -127,6 +132,7 @@ export default async (event, context) => {
 
       if (payload.isError)
         throw {message: payload.message}
+
       return payload.message
     })
 

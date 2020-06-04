@@ -9,7 +9,6 @@ import { isDev, headers, parseError } from './js/utils'
 AWS.config.setPromisesDependency(Promise)
 
 const s3 = new AWS.S3()
-// const horizon = process.env.STELLAR_NETWORK === 'TESTNET' ? 'https://horizon-testnet.stellar.org' : 'https://horizon.stellar.org'
 
 // Support multisig on XLM payment accounts
 // If response isn't a valid signed XDR ready for submission error out
@@ -18,6 +17,9 @@ const s3 = new AWS.S3()
 // Right now user pays for turing signing server fees, that might should be on the issuer (this) side
 // Axios should have timeouts
 // How do turing servers ensure contracts have fee logic built in?
+
+// Since we're now only paying for work done if work fails to get done we should kill the whole process
+  // Any maybe report which TSS failed in the error
 
 export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
@@ -44,14 +46,9 @@ export default async (event, context) => {
     const selectedTurrets = await Promise.map(contractTurrets, async (turret) =>
       axios.get(`${turret}/contract/${event.pathParameters.hash}`)
       .then(() => turret)
-      .catch((err) => console.error( // Don't error out if a turingSigningServer request fails
-          err.response
-          ? err.response.statusText
-            || err.response.data
-          : err
-        )
-      )
-    ).then((data) => compact(data)) // Remove failed requests
+      .catch(() => null) // Don't error out if a turingSigningServer request fails
+    )
+    .then((data) => compact(data)) // Remove failed requests
     .then((turrets) => sampleSize(turrets, signatureCount)) // Only make and pay for the requests we need
 
     const contractTurretResponses = await Promise.map(selectedTurrets, async (turret) =>
@@ -61,14 +58,7 @@ export default async (event, context) => {
         }
       })
       .then(({data}) => data)
-      .catch((err) => console.error( // Don't error out if a turingSigningServer request fails
-          err.response
-          ? err.response.statusText
-            || err.response.data
-          : err
-        )
-      )
-    ).then((data) => compact(data)) // Remove failed requests
+    )
 
     if (contractTurretResponses.length === 0)
       throw 'Every turret failed'
@@ -86,13 +76,9 @@ export default async (event, context) => {
 
     const transaction = new Transaction(xdrs[0], Networks[process.env.STELLAR_NETWORK])
 
-    each(contractTurretResponses, (response) => {
-      try {
-        transaction.addSignature(response.signer, response.signature)
-      } catch(err) {
-        console.error(err)
-      }
-    })
+    each(contractTurretResponses, (response) =>
+      transaction.addSignature(response.signer, response.signature)
+    )
 
     return {
       headers: {
