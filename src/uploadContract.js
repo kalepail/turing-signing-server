@@ -1,7 +1,7 @@
 import { Transaction, Keypair, Networks, Asset, Server } from 'stellar-sdk'
 import AWS from 'aws-sdk'
 import middy from '@middy/core'
-import httpMultipartBodyParser from '@middy/http-multipart-body-parser'
+import httpMultipartBodyParser from '@tinyanvil/http-multipart-body-parser'
 import httpHeaderNormalizer from '@middy/http-header-normalizer'
 import doNotWaitForEmptyEventLoop from '@middy/do-not-wait-for-empty-event-loop'
 import Promise from 'bluebird'

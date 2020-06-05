@@ -3,7 +3,7 @@ import { map } from 'lodash'
 import Promise from 'bluebird'
 import middy from '@middy/core'
 import httpHeaderNormalizer from '@middy/http-header-normalizer'
-import httpMultipartBodyParser from '@middy/http-multipart-body-parser'
+import httpMultipartBodyParser from '@tinyanvil/http-multipart-body-parser'
 import doNotWaitForEmptyEventLoop from '@middy/do-not-wait-for-empty-event-loop'
 import { Keypair } from 'stellar-sdk'
 
