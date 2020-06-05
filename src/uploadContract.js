@@ -13,13 +13,13 @@ import { headers, parseError } from './js/utils'
 import Pool from './js/pg'
 
 // TODO
-// If limits are hit throw error don't just truncate
-  // https://github.com/middyjs/middy/tree/master/packages/http-multipart-body-parser
-  // https://github.com/mscdex/busboy/issues/76
 // Add a collation endpoint which takes the turrets and forwards on the contract to the other turrets and sends back the responses in an array
 
 // DONE
 // Require TURING_UPLOAD_FEE to be paid in a presigned txn to the TURING_VAULT_ADDRESS
+// If fileSize limit is hit throw error
+  // https://github.com/middyjs/middy/tree/master/packages/http-multipart-body-parser
+  // https://github.com/mscdex/busboy/issues/76
 
 AWS.config.setPromisesDependency(Promise)
 
