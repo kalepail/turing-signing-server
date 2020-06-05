@@ -96,7 +96,7 @@ handler
       fieldNameSize: 10,
       fieldSize: 1000,
       fields: 4,
-      fileSize: 32e+6, // 32 MB
+      fileSize: 32e6, // 32 MB
       files: 1,
       parts: 5,
       headerPairs: 2
