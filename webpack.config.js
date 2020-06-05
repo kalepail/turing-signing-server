@@ -1,7 +1,6 @@
 const slsw = require('serverless-webpack')
 const nodeExternals = require('webpack-node-externals')
 const path = require('path')
-// const CopyPlugin = require('copy-webpack-plugin')
 
 module.exports = {
   stats: 'minimal',
@@ -30,10 +29,5 @@ module.exports = {
         exclude: /node_modules/
       }
     ]
-  },
-  // plugins: [
-  //   new CopyPlugin([
-  //     { from: 'contracts/dist/*', to: 'src' }
-  //   ]),
-  // ],
+  }
 }

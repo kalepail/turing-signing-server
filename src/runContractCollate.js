@@ -10,16 +10,16 @@ AWS.config.setPromisesDependency(Promise)
 
 const s3 = new AWS.S3()
 
-// Support multisig on XLM payment accounts
-// If response isn't a valid signed XDR ready for submission error out
-// If a request was successful the same request should be successful again
-  // Main concern here is fees, need to check did it increase balance by the fee not just does it in the request
-// Right now user pays for turing signing server fees, that might should be on the issuer (this) side
+// TODO
 // Axios should have timeouts
-// How do turing servers ensure contracts have fee logic built in?
+// If a turret causes a failure we should report which turret failed so we can exclude it in subsequent calls
 
-// Since we're now only paying for work done if work fails to get done we should kill the whole process
-  // Any maybe report which TSS failed in the error
+// DONE
+// If response isn't a valid signed XDR ready for submission error out
+// If a request was successful the same request should fail as we don't want the same response to be valid, rate limit avoidance loop attack vector
+// Contract Creators should be able to decide who pays fees and not be forced to make users pay them
+// TSS need to ensure contracts have fee logic built in
+// If work fails to get done we should kill the whole process
 
 export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
@@ -39,9 +39,6 @@ export default async (event, context) => {
       Key: event.pathParameters.hash,
     }).promise()
     .then(({TagSet}) => map(TagSet, (tag) => Buffer.from(tag.Value, 'base64').toString('utf8')))
-
-    // Not forwarding turretsContractData as I think it opens an attack vector for bad fees to be encoded without any way to check
-      // Only exception would be if a user were paying turing fees not the contract
 
     const selectedTurrets = await Promise.map(contractTurrets, async (turret) =>
       axios.get(`${turret}/contract/${event.pathParameters.hash}`)

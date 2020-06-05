@@ -5,7 +5,6 @@ import Promise from 'bluebird'
 AWS.config.setPromisesDependency(Promise)
 
 const s3 = new AWS.S3()
-// const isDev = process.env.NODE_ENV === 'development'
 
 export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
@@ -18,6 +17,7 @@ export default async (event, context) => {
 
     // const fs = require('fs')
     // const path = require('path')
+    // const isDev = process.env.NODE_ENV === 'development'
     // const s3Contract = { Body: fs.readFileSync(path.resolve(`${isDev ? '' : 'src/'}contracts/dist/is-it-raining.js`))}
 
     return {
@@ -46,14 +46,4 @@ export default async (event, context) => {
       message: error
     }
   }
-
-  // requireFromString(script)(body)
-  // .then((data) => callback(null, data))
-  // .catch((err) => {
-  //   console.error('butts')
-  //   callback(err)
-  //   throw err
-  // })
 }
-
-// Don't seem able to throw and error which shows up in the lambda catch promise block

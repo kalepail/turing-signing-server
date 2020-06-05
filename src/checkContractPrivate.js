@@ -5,8 +5,13 @@ import moment from 'moment'
 
 import Pool from './js/pg'
 
-// If a txn has been submitted to the network remove it from the pendingtxns array
-  // Since this will include looping over a rate limited horizon endpoint we should only run this occasionally and not as a response to a contract call
+// TODO
+// We should only run horizon checks occasionally and not as a response to a contract call
+  // Gotta watch for horizon rate limits, this should probably be throttled to 1 request per second
+  // Not really a huge deal to hit rate limits as it will just look again the next time it runs
+
+// DONE
+// Immediately flush if a txn exists on the blockchain (incurs the cost of looking that data up)
 
 const horizon = process.env.STELLAR_NETWORK === 'TESTNET' ? 'https://horizon-testnet.stellar.org' : 'https://horizon.stellar.org'
 const server = new Server(horizon)
@@ -28,7 +33,7 @@ export default async (event, context) => {
       return hash
     })
 
-    const liveTxns = await new Promise.map(uniqTxns, (txn) => { // Gotta watch for rate limits, this should probably be throttled to 1 request per second
+    const liveTxns = await new Promise.map(uniqTxns, (txn) => {
       const [time, hash] = txn.split(':')
 
       return server
@@ -104,7 +109,3 @@ export default async (event, context) => {
     }
   }
 }
-
-// Immediately flush if a txn exists on the blockchain (incurs the cost of looking that data up)
-// Dedupe if it's been 10 minutes since last dedupe
-// Flush unique if it's been 1 hour since last unique flush (may flush very recent submissions)

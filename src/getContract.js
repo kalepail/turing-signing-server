@@ -4,7 +4,8 @@ import { headers, parseError } from './js/utils'
 import Pool from './js/pg'
 import AWS from 'aws-sdk'
 
-// Should/could we add another collation get endpoint which gets a contract's turrets and returns an array response of all turret data?
+// TODO
+// Add another collation get endpoint which gets a contract's turrets and returns an array response of all turret data
 
 AWS.config.setPromisesDependency(Promise)
 

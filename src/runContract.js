@@ -15,8 +15,11 @@ import {
 } from './js/utils'
 import Pool from './js/pg'
 
-// Check for fees before signing xdr
+// TODO
 // Pools should be released even if there are errors, maybe in the finally block?
+
+// DONE
+// Check for fees before signing xdr
 
 AWS.config.setPromisesDependency(Promise)
 
