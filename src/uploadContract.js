@@ -112,6 +112,7 @@ handler
     if (handler.event.body.file.truncated)
       throw 'Contract file is too big'
 
+    // Check if contract has already been uploaded
     const codeHash = shajs('sha256').update(handler.event.body.file.content).digest('hex')
 
     const s3Contract = await s3.headObject({
@@ -132,7 +133,9 @@ handler
       s3Contract
       || signerSecret
     ) throw 'Contract already exists'
+    ////
 
+    // Check for and submit valid upload payment
     const transaction = new Transaction(handler.event.body.payment, Networks[process.env.STELLAR_NETWORK])
     const hash = transaction.hash().toString('hex')
 
@@ -161,6 +164,7 @@ handler
     })) throw 'Missing or invalid fee payment'
 
     await server.submitTransaction(transaction)
+    ////
 
     return
   }
