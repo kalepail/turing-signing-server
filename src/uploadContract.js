@@ -32,35 +32,6 @@ const originalHandler = async (event) => {
     const signer = Keypair.random()
     const codeHash = shajs('sha256').update(event.body.file.content).digest('hex')
 
-    const transaction = new Transaction(event.body.payment, Networks[process.env.STELLAR_NETWORK])
-    const hash = transaction.hash().toString('hex')
-
-    await server
-    .transactions()
-    .transaction(hash)
-    .call()
-    .catch((err) => err)
-    .then((err) => {
-      if (
-        err.response
-        && err.response.status === 404
-      ) return
-
-      else if (err.response)
-        throw err
-
-      throw 'Transaction has already been submitted'
-    })
-
-    if (!find(transaction._operations, {
-      type: 'payment',
-      destination: process.env.TURING_VAULT_ADDRESS,
-      amount: new BigNumber(process.env.TURING_UPLOAD_FEE).toFixed(7),
-      asset: Asset.native()
-    })) throw 'Missing or invalid fee payment'
-
-    await server.submitTransaction(transaction)
-
     const Tagging = map(
       Buffer.from(event.body.turrets, 'base64').toString('utf8').split(','),
       (turret, i) => `Turret_${i}=${Buffer.from(turret, 'utf8').toString('base64')}`
@@ -161,6 +132,35 @@ handler
       s3Contract
       || signerSecret
     ) throw 'Contract already exists'
+
+    const transaction = new Transaction(handler.event.body.payment, Networks[process.env.STELLAR_NETWORK])
+    const hash = transaction.hash().toString('hex')
+
+    await server
+    .transactions()
+    .transaction(hash)
+    .call()
+    .catch((err) => err)
+    .then((err) => {
+      if (
+        err.response
+        && err.response.status === 404
+      ) return
+
+      else if (err.response)
+        throw err
+
+      throw 'Transaction has already been submitted'
+    })
+
+    if (!find(transaction._operations, {
+      type: 'payment',
+      destination: process.env.TURING_VAULT_ADDRESS,
+      amount: new BigNumber(process.env.TURING_UPLOAD_FEE).toFixed(7),
+      asset: Asset.native()
+    })) throw 'Missing or invalid fee payment'
+
+    await server.submitTransaction(transaction)
 
     return
   }
