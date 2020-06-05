@@ -19,8 +19,8 @@ export function parseError(err) {
   ? { message: err.message }
   : err
 
-  console.error(error)
   console.error(err)
+  console.error(error)
 
   return {
     statusCode: error.status || err.status || error.statusCode || err.statusCode || 400,

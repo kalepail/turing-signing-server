@@ -78,17 +78,17 @@ async function contract({request, turrets}) {
 
 export default contract
 
-// contract({
-//   request: {
-//     source: 'GBYN57IZBBSAFK76AOTCOHGZDV664IXUI2XCOLDDNXBYMYIG7B3EPE6I'
-//   },
-//   turrets: [{
-//     vault: 'GD6JDEASY6CV2OC3VANDZZTUWKFKRDNPX5SBXH4OPEKHOHPQWN6T657G',
-//     fee: '0.1'
-//   },{
-//     vault: 'GD6JDEASY6CV2OC3VANDZZTUWKFKRDNPX5SBXH4OPEKHOHPQWN6T657G',
-//     fee: '0.1'
-//   }]
-// })
-// .then((res) => console.log(res))
-// .catch((err) => console.error(err))
+contract({
+  request: {
+    source: 'GC6DLX5I5UB6T7WABY7GGFLOH3H2JJTF7D4UZ2K6PMKAVX7AE4BE7PUJ'
+  },
+  turrets: [{
+    vault: 'GD6JDEASY6CV2OC3VANDZZTUWKFKRDNPX5SBXH4OPEKHOHPQWN6T657G',
+    fee: '0.1'
+  },{
+    vault: 'GD6JDEASY6CV2OC3VANDZZTUWKFKRDNPX5SBXH4OPEKHOHPQWN6T657G',
+    fee: '0.1'
+  }]
+})
+.then((res) => console.log(res))
+.catch((err) => console.error(err))
