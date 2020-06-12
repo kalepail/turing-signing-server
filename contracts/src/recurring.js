@@ -4,7 +4,7 @@ import moment from 'moment'
 // Contract
 const contractAddr = 'GAGTH375JDCHRYF47BGKZWGGKPSHJKUE7DT4DAILZ4M4YTNWLPEQSRKR'
 // SCUEBCV5L5SP2ZMVBY4OQVGRXHOTKLD5XTGK5PTJCNF3HWDBIN7NMSNU
-// 6c673e55c6ac6d8e9afb3df60a4ead3cf027b3dd8c1e8faeea6a53ff7f367b85
+// f050c372007152d8dd9632d52f6259082f23b44f043f86af283e6f174a1ab786
 
 // User
 // GBTPNBHRPAADMGUSAJGM72Y6V6STWD5DJTUBX6GKZF3PZWEFVO47BSNS
@@ -27,7 +27,7 @@ async function contract({request, turrets}) {
     .then((account) => {
       const now = moment.utc().startOf('minute')
       const minTime = now.clone().startOf('month')
-      const maxTime = minTime.clone().add(7, 'days')
+      const maxTime = minTime.clone().endOf('month')
 
       const lastRanRaw = account.data_attr[`tss.${contractAddr}.ran`]
 
