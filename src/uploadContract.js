@@ -9,8 +9,9 @@ import { map, find } from 'lodash'
 import shajs from 'sha.js'
 import BigNumber from 'bignumber.js'
 
-import { headers, parseError } from './js/utils'
+import { parseError } from './js/utils'
 import Pool from './js/pg'
+import {createJsonResponse} from './js/response-utils'
 
 // TODO
 // Add a collation endpoint which takes the turrets and forwards on the contract to the other turrets and sends back the responses in an array
@@ -64,16 +65,12 @@ const originalHandler = async (event) => {
 
     await pgClient.release()
 
-    return {
-      headers,
-      statusCode: 200,
-      body: JSON.stringify({
-        hash: codeHash,
-        vault: process.env.TURING_VAULT_ADDRESS,
-        signer: signer.publicKey(),
-        fee: process.env.TURING_RUN_FEE
-      })
-    }
+    return createJsonResponse({
+      hash: codeHash,
+      vault: process.env.TURING_VAULT_ADDRESS,
+      signer: signer.publicKey(),
+      fee: process.env.TURING_RUN_FEE
+    })
   }
 
   catch(err) {

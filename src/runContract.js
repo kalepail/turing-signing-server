@@ -10,10 +10,10 @@ import BigNumber from 'bignumber.js'
 import lambda from './js/lambda'
 import {
   isDev,
-  headers,
   parseError
 } from './js/utils'
 import Pool from './js/pg'
+import {createJsonResponse} from './js/response-utils'
 
 // TODO
 // Pools should be released even if there are errors, maybe in the finally block?
@@ -193,15 +193,11 @@ export default async (event, context) => {
     const signerKeypair = Keypair.fromSecret(signerSecret)
     const signature = signerKeypair.sign(transaction.hash()).toString('base64')
 
-    return {
-      headers,
-      statusCode: 200,
-      body: JSON.stringify({
-        xdr,
-        signer: signerKeypair.publicKey(),
-        signature
-      })
-    }
+    return createJsonResponse({
+      xdr,
+      signer: signerKeypair.publicKey(),
+      signature
+    })
   }
 
   catch(err) {

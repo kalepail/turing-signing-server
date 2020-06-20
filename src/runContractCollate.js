@@ -4,7 +4,8 @@ import { chain, map, each, compact, sampleSize } from 'lodash'
 import axios from 'axios'
 import Promise from 'bluebird'
 
-import { isDev, headers, parseError } from './js/utils'
+import { isDev, parseError } from './js/utils'
+import { createXdrResponse } from './js/response-utils'
 
 AWS.config.setPromisesDependency(Promise)
 
@@ -77,14 +78,7 @@ export default async (event, context) => {
       transaction.addSignature(response.signer, response.signature)
     )
 
-    return {
-      headers: {
-        ...headers,
-        'Content-Type': 'text/plain'
-      },
-      statusCode: 200,
-      body: transaction.toXDR()
-    }
+    return createXdrResponse(transaction.toXDR())
   }
 
   catch(err) {

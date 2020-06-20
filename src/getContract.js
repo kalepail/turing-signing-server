@@ -1,8 +1,9 @@
 import { Keypair } from 'stellar-sdk'
 
-import { headers, parseError } from './js/utils'
+import { parseError } from './js/utils'
 import Pool from './js/pg'
 import AWS from 'aws-sdk'
+import {createJsonResponse} from './js/response-utils'
 
 // TODO
 // Add another collation get endpoint which gets a contract's turrets and returns an array response of all turret data
@@ -45,17 +46,13 @@ export default async (event, context) => {
 
     const signerKeypair = Keypair.fromSecret(signerSecret)
 
-    return {
-      headers,
-      statusCode: 200,
-      body: JSON.stringify({
+    return createJsonResponse({
         contract,
-        vault: process.env.TURING_VAULT_ADDRESS,
+        fields,
         signer: signerKeypair.publicKey(),
-        fee: process.env.TURING_RUN_FEE,
-        fields
-      })
-    }
+        vault: process.env.TURING_VAULT_ADDRESS,
+        fee: process.env.TURING_RUN_FEE
+    })
   }
 
   catch(err) {
