@@ -25,8 +25,8 @@ export default async (event, context) => {
     const contractPendingTxns = await pgClient.query(`
       select pendingtxns
         from contracts
-      WHERE contract = '${event.hash}'
-    `).then((data) => get(data, 'rows[0].pendingtxns'))
+      WHERE contract = $1
+    `,[event.hash]).then((data) => get(data, 'rows[0].pendingtxns'))
 
     const uniqTxns = uniqBy(contractPendingTxns, (txn) => {
       const [time, hash] = txn.split(':')
@@ -73,11 +73,11 @@ export default async (event, context) => {
         set pendingtxns = (
           select array_agg(elem)
             from contracts, unnest(pendingtxns) elem
-          where contract = '${event.hash}'
-          and elem <> all(array['${flushList.join('\',\'')}'])
+          where contract = $1
+          and elem <> all($2)
         )
-        where contract = '${event.hash}'
-      `)
+        where contract = $1
+      `,[event.hash, flushList])
     }
 
     await pgClient.release()

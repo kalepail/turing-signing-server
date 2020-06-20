@@ -59,8 +59,8 @@ const originalHandler = async (event) => {
 
     await pgClient.query(`
       INSERT INTO contracts (contract, signer)
-      SELECT '${codeHash}', '${signer.secret()}'
-    `)
+      VALUES ($1, $2)
+    `, [codeHash, signer.secret()])
 
     await pgClient.release()
 
@@ -124,8 +124,8 @@ handler
 
     const signerSecret = await pgClient.query(`
       SELECT contract FROM contracts
-      WHERE contract = '${codeHash}'
-    `).then((data) => data.rows[0]).catch(() => null)
+      WHERE contract = $1
+    `, [codeHash]).then((data) => data.rows[0]).catch(() => null)
 
     await pgClient.release()
 

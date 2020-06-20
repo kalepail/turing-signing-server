@@ -68,8 +68,8 @@ export default async (event, context) => {
 
     const pendingTxnLength = await pgClientSelect.query(`
       SELECT cardinality(pendingtxns) FROM contracts
-      WHERE contract = '${event.pathParameters.hash}'
-    `).then((data) => {
+      WHERE contract = $1
+    `, [event.pathParameters.hash]).then((data) => {
       const contractExists = data.rows[0]
 
       if (contractExists)
@@ -86,8 +86,8 @@ export default async (event, context) => {
 
     const signerSecret = await pgClientSelect.query(`
       SELECT signer FROM contracts
-      WHERE contract = '${event.pathParameters.hash}'
-    `).then((data) => get(data, 'rows[0].signer'))
+      WHERE contract = $1
+    `,[event.pathParameters.hash]).then((data) => get(data, 'rows[0].signer'))
 
     const preHashTxn = `${moment().add(process.env.TURING_PENDING_AGE, 'seconds').format('X')}:pre+${crypto.randomBytes(30).toString('hex')}`
 
@@ -182,11 +182,11 @@ export default async (event, context) => {
       set pendingtxns = (
         select array_agg(elem)
           from contracts, unnest(pendingtxns) elem
-        where contract = '${event.pathParameters.hash}'
-        and elem <> all(array['${preHashTxn}'])
+        where contract = $1
+        and elem <> all($2)
       )
-      where contract = '${event.pathParameters.hash}'
-    `)
+      where contract = $1
+    `,[event.pathParameters.hash, [preHashTxn]])
 
     await pgClientUpdate.release()
 

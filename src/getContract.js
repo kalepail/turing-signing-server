@@ -19,8 +19,8 @@ export default async (event, context) => {
 
     const signerSecret = await pgClient.query(`
      SELECT signer FROM contracts
-     WHERE contract = '${event.pathParameters.hash}'
-   `).then((data) => {
+     WHERE contract = $1
+   `, [event.pathParameters.hash]).then((data) => {
       const contractSigner = data.rows[0]
 
       if (contractSigner)
