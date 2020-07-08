@@ -8,7 +8,7 @@ import doNotWaitForEmptyEventLoop from '@middy/do-not-wait-for-empty-event-loop'
 import { Keypair } from 'stellar-sdk'
 
 import { parseError } from './js/utils'
-import { createJsonResponse } from './js/response-utils'
+import { createJsonResponse } from './js/utils'
 
 AWS.config.setPromisesDependency(Promise)
 
