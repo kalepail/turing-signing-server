@@ -133,6 +133,7 @@ handler
     ////
 
     // Check for and submit valid upload payment
+    if (!process.env.TURING_UPLOAD_FEE) return
     const transaction = new Transaction(handler.event.body.payment, Networks[process.env.STELLAR_NETWORK])
     const hash = transaction.hash().toString('hex')
 
