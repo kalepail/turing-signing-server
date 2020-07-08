@@ -112,6 +112,21 @@ functions:
             origin: '*'
             cacheControl: 'public; max-age=14400'
 
+  getDetails:
+    handler: src/getDetails.default
+    environment: ${file(env.yml)}
+    iamRoleStatements: []
+    timeout: 3
+    maximumRetryAttempts: 0
+    maximumRecordAgeInSeconds: 0
+    events:
+      - http:
+          path: /
+          method: GET
+          cors:
+            origin: '*'
+            cacheControl: 'public; max-age=14400'
+
   runContract:
     handler: src/runContract.default
     environment: ${file(env.yml)}

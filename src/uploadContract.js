@@ -9,8 +9,9 @@ import { map, find } from 'lodash'
 import shajs from 'sha.js'
 import BigNumber from 'bignumber.js'
 
-import { headers, parseError } from './js/utils'
+import { parseError } from './js/utils'
 import Pool from './js/pg'
+import { createJsonResponse } from './js/response-utils'
 
 // TODO
 // Add a collation endpoint which takes the turrets and forwards on the contract to the other turrets and sends back the responses in an array
@@ -59,21 +60,17 @@ const originalHandler = async (event) => {
 
     await pgClient.query(`
       INSERT INTO contracts (contract, signer)
-      SELECT '${codeHash}', '${signer.secret()}'
-    `)
+      VALUES ($1, $2)
+    `, [codeHash, signer.secret()])
 
     await pgClient.release()
 
-    return {
-      headers,
-      statusCode: 200,
-      body: JSON.stringify({
-        hash: codeHash,
-        vault: process.env.TURING_VAULT_ADDRESS,
-        signer: signer.publicKey(),
-        fee: process.env.TURING_RUN_FEE
-      })
-    }
+    return createJsonResponse({
+      hash: codeHash,
+      vault: process.env.TURING_VAULT_ADDRESS,
+      signer: signer.publicKey(),
+      fee: process.env.TURING_RUN_FEE
+    })
   }
 
   catch(err) {
@@ -124,8 +121,8 @@ handler
 
     const signerSecret = await pgClient.query(`
       SELECT contract FROM contracts
-      WHERE contract = '${codeHash}'
-    `).then((data) => data.rows[0]).catch(() => null)
+      WHERE contract = $1
+    `, [codeHash]).then((data) => data.rows[0]).catch(() => null)
 
     await pgClient.release()
 
@@ -136,6 +133,7 @@ handler
     ////
 
     // Check for and submit valid upload payment
+    if (!process.env.TURING_UPLOAD_FEE) return
     const transaction = new Transaction(handler.event.body.payment, Networks[process.env.STELLAR_NETWORK])
     const hash = transaction.hash().toString('hex')
 

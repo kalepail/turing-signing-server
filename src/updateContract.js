@@ -7,7 +7,8 @@ import httpMultipartBodyParser from '@tinyanvil/http-multipart-body-parser'
 import doNotWaitForEmptyEventLoop from '@middy/do-not-wait-for-empty-event-loop'
 import { Keypair } from 'stellar-sdk'
 
-import { headers, parseError } from './js/utils'
+import { parseError } from './js/utils'
+import { createJsonResponse } from './js/response-utils'
 
 AWS.config.setPromisesDependency(Promise)
 
@@ -26,7 +27,9 @@ const originalHandler = async (event) => {
 
     const keypair = Keypair.fromPublicKey(contract)
 
-    if (!keypair.verify(Buffer.from(event.body.turrets, 'base64'), Buffer.from(event.body.signature, 'base64')))
+    const newTurrets = Buffer.from(event.body.turrets, 'base64')
+
+    if (!keypair.verify(newTurrets, Buffer.from(event.body.signature, 'base64')))
       throw 'Invalid signature'
 
     await s3.deleteObjectTagging({
@@ -34,8 +37,10 @@ const originalHandler = async (event) => {
       Key: event.pathParameters.hash,
     }).promise()
 
+    const parsedTurrets = newTurrets.toString('utf8').split(',')
+
     const TagSet = map(
-      Buffer.from(event.body.turrets, 'base64').toString('utf8').split(','),
+        parsedTurrets,
       (turret, i) =>
     {
       return {
@@ -50,10 +55,10 @@ const originalHandler = async (event) => {
       Tagging: { TagSet }
     }).promise()
 
-    return {
-      headers,
-      statusCode: 200
-    }
+    return createJsonResponse({
+      contract: event.pathParameters.hash,
+      turrets: parsedTurrets
+    })
   }
 
   catch(err) {
