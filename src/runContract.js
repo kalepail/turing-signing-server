@@ -13,7 +13,7 @@ import {
   parseError
 } from './js/utils'
 import Pool from './js/pg'
-import {createJsonResponse} from './js/response-utils'
+import { createJsonResponse } from './js/response-utils'
 
 // TODO
 // Pools should be released even if there are errors, maybe in the finally block?
