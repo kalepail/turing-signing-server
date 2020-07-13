@@ -31,10 +31,11 @@ export default async (event, context) => {
           Key: contractDescriptor.contract
         })
         .promise()
-        .then(({Metadata: {fields, contract}}) => ({
+        .then(({Metadata: {fields, authkey}}) => ({
+          contract: contractDescriptor.contract,
+          authkey,
+          signer: Keypair.fromSecret(contractDescriptor.signer).publicKey(),
           fields: fields ? JSON.parse(Buffer.from(fields, 'base64').toString('utf8')) : undefined,
-          contract,
-          signer: Keypair.fromSecret(contractDescriptor.signer).publicKey()
         }))
       )
     )

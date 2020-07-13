@@ -31,14 +31,14 @@ const s3 = new AWS.S3()
 const originalHandler = async (event) => {
   try {
     const signer = Keypair.random()
-    const codeHash = shajs('sha256').update(event.body.file.content).digest('hex')
+    const codeHash = shajs('sha256').update(event.body.contract.content).digest('hex')
 
     const Tagging = map(
       Buffer.from(event.body.turrets, 'base64').toString('utf8').split(','),
       (turret, i) => `Turret_${i}=${Buffer.from(turret, 'utf8').toString('base64')}`
     ).join('&')
 
-    const Metadata = {Contract: event.body.contract}
+    const Metadata = {AuthKey: event.body.authkey}
 
     if (event.body.fields)
       Metadata.Fields = event.body.fields
@@ -46,9 +46,9 @@ const originalHandler = async (event) => {
     await s3.putObject({
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: codeHash,
-      Body: event.body.file.content,
-      ContentType: event.body.file.mimetype,
-      ContentLength: event.body.file.content.length,
+      Body: event.body.contract.content,
+      ContentType: event.body.contract.mimetype,
+      ContentLength: event.body.contract.content.length,
       StorageClass: 'STANDARD',
       CacheControl: 'public; max-age=31536000',
       ACL: 'public-read',
@@ -103,14 +103,14 @@ handler
 .use({
   async before(handler) {
     if (
-      handler.event.body.file.mimetype !== 'application/javascript'
+      handler.event.body.contract.mimetype !== 'application/javascript'
     ) throw 'Contract must be JavaScript'
 
-    if (handler.event.body.file.truncated)
+    if (handler.event.body.contract.truncated)
       throw 'Contract file is too big'
 
     // Check if contract has already been uploaded
-    const codeHash = shajs('sha256').update(handler.event.body.file.content).digest('hex')
+    const codeHash = shajs('sha256').update(handler.event.body.contract.content).digest('hex')
 
     const s3Contract = await s3.headObject({
       Bucket: process.env.AWS_BUCKET_NAME,

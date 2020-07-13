@@ -19,13 +19,13 @@ const s3 = new AWS.S3()
 
 const originalHandler = async (event) => {
   try {
-    const contract = await s3.headObject({
+    const authkey = await s3.headObject({
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: event.pathParameters.hash,
     }).promise()
-    .then(({Metadata: {contract}}) => contract)
+    .then(({Metadata: {authkey}}) => authkey)
 
-    const keypair = Keypair.fromPublicKey(contract)
+    const keypair = Keypair.fromPublicKey(authkey)
 
     const newTurrets = Buffer.from(event.body.turrets, 'base64')
 
