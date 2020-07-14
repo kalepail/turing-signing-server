@@ -1,9 +1,9 @@
 import { Keypair } from 'stellar-sdk'
 
-import { parseError } from './js/utils'
+import { createJsonResponse, parseError } from './js/utils'
 import Pool from './js/pg'
 import AWS from 'aws-sdk'
-import { createJsonResponse } from './js/utils'
+import { compact } from 'lodash'
 
 // TODO
 // Add another collation get endpoint which gets a contract's turrets and returns an array response of all turret data
@@ -37,6 +37,7 @@ export default async (event, context) => {
           signer: Keypair.fromSecret(contractDescriptor.signer).publicKey(),
           fields: fields ? JSON.parse(Buffer.from(fields, 'base64').toString('utf8')) : undefined,
         }))
+        .catch(() => null) // Don't throw on missing contracts
       )
     )
 
@@ -45,7 +46,7 @@ export default async (event, context) => {
       runFee: process.env.TURING_RUN_FEE,
       uploadFee: process.env.TURING_UPLOAD_FEE,
       network: process.env.STELLAR_NETWORK,
-      contracts: contractsMeta
+      contracts: compact(contractsMeta)
     })
   } catch (err) {
     return parseError(err)
