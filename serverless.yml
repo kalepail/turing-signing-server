@@ -36,7 +36,6 @@ custom:
 
 provider:
   name: aws
-  profile: default
   runtime: nodejs12.x
   region: us-east-1
   tracing:
