@@ -1,9 +1,8 @@
 import { Keypair } from 'stellar-sdk'
 
-import { parseError } from './js/utils'
+import { createJsonResponse, parseError } from './js/utils'
 import Pool from './js/pg'
 import AWS from 'aws-sdk'
-import { createJsonResponse } from './js/utils'
 
 // TODO
 // Add another collation get endpoint which gets a contract's turrets and returns an array response of all turret data

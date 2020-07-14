@@ -9,9 +9,8 @@ import { map, find } from 'lodash'
 import shajs from 'sha.js'
 import BigNumber from 'bignumber.js'
 
-import { parseError } from './js/utils'
+import { parseError, createJsonResponse } from './js/utils'
 import Pool from './js/pg'
-import { createJsonResponse } from './js/utils'
 
 // TODO
 // Add a collation endpoint which takes the turrets and forwards on the contract to the other turrets and sends back the responses in an array

@@ -4,8 +4,7 @@ import { chain, map, each, compact, sampleSize } from 'lodash'
 import axios from 'axios'
 import Promise from 'bluebird'
 
-import { isDev, parseError } from './js/utils'
-import { createXdrResponse } from './js/utils'
+import { isDev, parseError, createXdrResponse } from './js/utils'
 
 AWS.config.setPromisesDependency(Promise)
 

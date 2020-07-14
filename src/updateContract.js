@@ -7,8 +7,7 @@ import httpMultipartBodyParser from '@tinyanvil/http-multipart-body-parser'
 import doNotWaitForEmptyEventLoop from '@middy/do-not-wait-for-empty-event-loop'
 import { Keypair } from 'stellar-sdk'
 
-import { parseError } from './js/utils'
-import { createJsonResponse } from './js/utils'
+import { parseError, createJsonResponse } from './js/utils'
 
 AWS.config.setPromisesDependency(Promise)
 

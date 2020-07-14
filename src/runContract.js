@@ -10,10 +10,10 @@ import BigNumber from 'bignumber.js'
 import lambda from './js/lambda'
 import {
   isDev,
-  parseError
+  parseError,
+  createJsonResponse
 } from './js/utils'
 import Pool from './js/pg'
-import { createJsonResponse } from './js/utils'
 
 // TODO
 // Pools should be released even if there are errors, maybe in the finally block?
