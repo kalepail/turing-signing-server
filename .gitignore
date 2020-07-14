@@ -54,7 +54,7 @@ env.yml
 .idea
 
 # Certs
-certs
+certs/*
 
 # Contracts
 contracts/dist
