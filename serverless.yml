@@ -36,15 +36,16 @@ custom:
 
 provider:
   name: aws
+  profile: default
+  runtime: nodejs12.x
+  region: us-east-1
+  tracing:
+    lambda: true
   environment:
     SERVICE_NAME: turing-signing-server-${opt:instance}
     PG_DATABASE: turing-signing-server-${opt:instance}
     AWS_BUCKET_NAME: turing-signing-server-${opt:instance}
     instance: ${opt:instance}
-  runtime: nodejs12.x
-  region: us-east-1
-  tracing:
-    lambda: true
   iamRoleStatements:
     - Effect: Allow
       Action:
