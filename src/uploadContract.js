@@ -37,10 +37,10 @@ const originalHandler = async (event) => {
       (turret, i) => `Turret_${i}=${Buffer.from(turret, 'utf8').toString('base64')}`
     ).join('&')
 
-    const Metadata = {AuthKey: event.body.authkey}
+    let Metadata
 
     if (event.body.fields)
-      Metadata.Fields = event.body.fields
+      Metadata = {Fields: event.body.fields}
 
     await s3.putObject({
       Bucket: process.env.AWS_BUCKET_NAME,

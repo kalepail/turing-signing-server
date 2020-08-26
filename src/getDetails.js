@@ -31,9 +31,8 @@ export default async (event, context) => {
         Key: contract
       })
       .promise()
-      .then(({Metadata: {fields, authkey}}) => ({
+      .then(({Metadata: {fields}}) => ({
         contract: contract,
-        authkey,
         signer: Keypair.fromSecret(signer).publicKey(),
         fields: fields ? JSON.parse(Buffer.from(fields, 'base64').toString('utf8')) : undefined,
       }))

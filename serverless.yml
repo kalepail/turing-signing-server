@@ -107,27 +107,6 @@ functions:
             origin: '*'
             cacheControl: 'public; max-age=14400'
 
-  updateContract:
-    handler: src/updateContract.default
-    environment: ${file(.env-${opt:instance}.yml)}
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - s3:DeleteObjectTagging
-          - s3:PutObjectTagging
-        Resource: arn:aws:s3:::turing-signing-server-${opt:instance}/*
-    timeout: 6
-    maximumRetryAttempts: 0
-    maximumRecordAgeInSeconds: 0
-    reservedConcurrency: 6
-    events:
-      - http:
-          path: contract/{hash}
-          method: PUT
-          cors:
-            origin: '*'
-            cacheControl: 'public; max-age=14400'
-
   getContract:
     handler: src/getContract.default
     environment: ${file(.env-${opt:instance}.yml)}
