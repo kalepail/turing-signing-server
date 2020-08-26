@@ -1,4 +1,4 @@
-tenant: tyvdh
+org: tyvdh
 app: turing-signing-server
 service: turing-signing-server-${opt:instance}
 
@@ -30,8 +30,8 @@ custom:
     defaultInherit: true
 
   customDomain:
-    domainName: turing-signing-server-${opt:instance}.stellar.buzz
-    certificateName: turing-signing-server-${opt:instance}.stellar.buzz
+    domainName: tss-${opt:instance}.stellar.buzz
+    certificateName: '*.stellar.buzz'
     createRoute53Record: false
 
 provider:
@@ -53,9 +53,40 @@ provider:
       Resource: '*'
 
 functions:
+  getToml:
+    handler: src/getToml.default
+    iamRoleStatements: []
+    timeout: 3
+    maximumRetryAttempts: 0
+    maximumRecordAgeInSeconds: 0
+    webpack:
+      toml: true
+    events:
+      - http:
+          path: .well-known/stellar.toml
+          method: GET
+          cors:
+            origin: '*'
+            cacheControl: 'public; max-age=14400'
+
+  getDetails:
+    handler: src/getDetails.default
+    environment: ${file(.env-${opt:instance}.yml)}
+    iamRoleStatements: []
+    timeout: 3
+    maximumRetryAttempts: 0
+    maximumRecordAgeInSeconds: 0
+    events:
+      - http:
+          path: /
+          method: GET
+          cors:
+            origin: '*'
+            cacheControl: 'public; max-age=14400'
+
   uploadContract:
     handler: src/uploadContract.default
-    environment: ${file(env.yml)}
+    environment: ${file(.env-${opt:instance}.yml)}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -78,7 +109,7 @@ functions:
 
   updateContract:
     handler: src/updateContract.default
-    environment: ${file(env.yml)}
+    environment: ${file(.env-${opt:instance}.yml)}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -99,7 +130,7 @@ functions:
 
   getContract:
     handler: src/getContract.default
-    environment: ${file(env.yml)}
+    environment: ${file(.env-${opt:instance}.yml)}
     iamRoleStatements: []
     timeout: 3
     maximumRetryAttempts: 0
@@ -112,24 +143,9 @@ functions:
             origin: '*'
             cacheControl: 'public; max-age=14400'
 
-  getDetails:
-    handler: src/getDetails.default
-    environment: ${file(env.yml)}
-    iamRoleStatements: []
-    timeout: 3
-    maximumRetryAttempts: 0
-    maximumRecordAgeInSeconds: 0
-    events:
-      - http:
-          path: /
-          method: GET
-          cors:
-            origin: '*'
-            cacheControl: 'public; max-age=14400'
-
   runContract:
     handler: src/runContract.default
-    environment: ${file(env.yml)}
+    environment: ${file(.env-${opt:instance}.yml)}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -153,7 +169,7 @@ functions:
 
   runContractCollate:
     handler: src/runContractCollate.default
-    environment: ${file(env.yml)}
+    environment: ${file(.env-${opt:instance}.yml)}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -180,7 +196,7 @@ functions:
 
   checkContractPrivate:
     handler: src/checkContractPrivate.default
-    environment: ${file(env.yml)}
+    environment: ${file(.env-${opt:instance}.yml)}
     iamRoleStatements: []
     maximumRetryAttempts: 0
     maximumRecordAgeInSeconds: 0
