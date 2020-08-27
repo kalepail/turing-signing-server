@@ -8,7 +8,6 @@ import Pool from './js/pg'
 
 // TODO: Ensure a 1:1 swap, if multiple turrets are dead enforce swapping 1 at a time
   // If signer is live but not included in X-Turrets a swap is possible
-  // Remove old manage data, replace with new manage data
 
 // // GAVDUDMKRMGDF57IXX745EWKM4UPC3X7LGO6C5NKT4CDQW7MT7L6UXNR // User
 

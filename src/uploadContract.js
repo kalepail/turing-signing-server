@@ -5,7 +5,7 @@ import httpMultipartBodyParser from '@tinyanvil/http-multipart-body-parser'
 import httpHeaderNormalizer from '@middy/http-header-normalizer'
 import doNotWaitForEmptyEventLoop from '@middy/do-not-wait-for-empty-event-loop'
 import Promise from 'bluebird'
-import { map, find } from 'lodash'
+import { find } from 'lodash'
 import shajs from 'sha.js'
 import BigNumber from 'bignumber.js'
 

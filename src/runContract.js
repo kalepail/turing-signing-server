@@ -1,7 +1,7 @@
 import Promise from 'bluebird'
 import { Keypair, Networks, Transaction, Asset, Server } from 'stellar-sdk'
 import axios from 'axios'
-import { uniq, get, find, compact } from 'lodash'
+import { uniq, get, find, chain } from 'lodash'
 import moment from 'moment'
 import crypto from 'crypto'
 import BigNumber from 'bignumber.js'
@@ -103,7 +103,11 @@ export default async (event, context) => {
         .then(async ({data}) => data)
         .catch(() => null)
       )
-    ).then((signers) => compact(signers))
+    ).then((signers) => chain(signers)
+      .compact()
+      .orderBy(['turret', 'signer', 'fee'], 'desc')
+      .value()
+    )
 
     const xdr = await lambda.invoke({
       FunctionName: `${process.env.SERVICE_NAME}-dev-runContractPrivate`,
