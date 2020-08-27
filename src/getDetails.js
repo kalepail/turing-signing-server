@@ -6,9 +6,6 @@ import Promise from 'bluebird'
 import { createJsonResponse, parseError } from './js/utils'
 import Pool from './js/pg'
 
-// TODO
-// Add another collation get endpoint which gets a contract's turrets and returns an array response of all turret data
-
 AWS.config.setPromisesDependency(Promise)
 
 const s3 = new AWS.S3()

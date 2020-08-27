@@ -13,7 +13,7 @@ import { parseError, createJsonResponse } from './js/utils'
 import Pool from './js/pg'
 
 // TODO
-// Add a collation endpoint which takes the turrets and forwards on the contract to the other turrets and sends back the responses in an array
+// Contract hash should include fields as well as contract code
 
 // DONE
 // Require TURING_UPLOAD_FEE to be paid in a presigned txn to the TURING_VAULT_ADDRESS
@@ -32,11 +32,6 @@ const originalHandler = async (event) => {
     const signer = Keypair.random()
     const codeHash = shajs('sha256').update(event.body.contract.content).digest('hex')
 
-    const Tagging = map(
-      Buffer.from(event.body.turrets, 'base64').toString('utf8').split(','),
-      (turret, i) => `Turret_${i}=${Buffer.from(turret, 'utf8').toString('base64')}`
-    ).join('&')
-
     let Metadata
 
     if (event.body.fields)
@@ -52,7 +47,6 @@ const originalHandler = async (event) => {
       CacheControl: 'public; max-age=31536000',
       ACL: 'public-read',
       Metadata,
-      Tagging
     }).promise()
 
     const pgClient = await Pool.connect()

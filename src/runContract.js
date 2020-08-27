@@ -2,14 +2,14 @@ import AWS from 'aws-sdk'
 import Promise from 'bluebird'
 import { Keypair, Networks, Transaction, Asset, Server } from 'stellar-sdk'
 import axios from 'axios'
-import { get, map, difference, find } from 'lodash'
+import { uniq, get, find, compact } from 'lodash'
 import moment from 'moment'
 import crypto from 'crypto'
 import BigNumber from 'bignumber.js'
 
 import lambda from './js/lambda'
 import {
-  isDev,
+  tssRoute,
   parseError,
   createJsonResponse
 } from './js/utils'
@@ -31,20 +31,6 @@ export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
 
   try {
-    const contractTurrets = isDev
-    ? [
-      'https://localhost:4000/dev',
-      'https://localhost:4001/dev',
-      'https://localhost:4002/dev',
-      'https://localhost:4003/dev',
-      'https://localhost:4004/dev',
-    ]
-    : await s3.getObjectTagging({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: event.pathParameters.hash,
-    }).promise()
-    .then(({TagSet}) => map(TagSet, (tag) => Buffer.from(tag.Value, 'base64').toString('utf8')))
-
     await lambda.invoke({ // Call after the s3 lookup to ensure we've actually got a contract to work with
       FunctionName: `${process.env.SERVICE_NAME}-dev-checkContractPrivate`,
       InvocationType: 'Event',
@@ -107,19 +93,21 @@ export default async (event, context) => {
 
     // If a returned XDR has already been submitted throw an error, otherwise we open up a looping vulnerability
 
-    const selectedTurrets = event.headers['X-Turrets'] ? JSON.parse(Buffer.from(event.headers['X-Turrets'], 'base64').toString()) : contractTurrets
+    if (!event.headers['X-Turrets'])
+      throw 'Mising X-Turrets header'
 
-    if (difference(selectedTurrets, contractTurrets).length) {
-      if (isDev)
-        console.error('selectedTurrets contains urls not present in contractTurrets')
-      else
-        throw 'selectedTurrets contains urls not present in contractTurrets'
-    }
-
-    const turretsContractData = await Promise.map(selectedTurrets, async (turret) =>
-      axios.get(`${turret}/contract/${event.pathParameters.hash}`)
-      .then(({data}) => data)
-    )
+    const healthySigners = await Promise.map(uniq([
+      process.env.TURING_VAULT_ADDRESS,
+      ...event.headers['X-Turrets'].split(',')
+    ]),
+      async (turret) => server
+      .loadAccount(turret)
+      .then((account) => axios
+        .get(`${tssRoute(account)}/contract/${event.pathParameters.hash}`)
+        .then(async ({data}) => data)
+        .catch(() => null)
+      )
+    ).then((signers) => compact(signers))
 
     const xdr = await lambda.invoke({
       FunctionName: `${process.env.SERVICE_NAME}-dev-runContractPrivate`,
@@ -129,7 +117,7 @@ export default async (event, context) => {
         hash: event.pathParameters.hash,
         body: {
           request: JSON.parse(event.body),
-          turrets: turretsContractData
+          turrets: healthySigners
         }
       })
     }).promise()
