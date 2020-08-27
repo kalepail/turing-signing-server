@@ -16,7 +16,7 @@ import Pool from './js/pg'
 // Contract hash should include fields as well as contract code
 
 // DONE
-// Require TURING_UPLOAD_FEE to be paid in a presigned txn to the TURING_VAULT_ADDRESS
+// Require TURRET_UPLOAD_FEE to be paid in a presigned txn to the TURRET_ADDRESS
 // If fileSize limit is hit throw error
   // https://github.com/middyjs/middy/tree/master/packages/http-multipart-body-parser
   // https://github.com/mscdex/busboy/issues/76
@@ -60,9 +60,9 @@ const originalHandler = async (event) => {
 
     return createJsonResponse({
       hash: codeHash,
-      vault: process.env.TURING_VAULT_ADDRESS,
+      turret: process.env.TURRET_ADDRESS,
       signer: signer.publicKey(),
-      fee: process.env.TURING_RUN_FEE
+      fee: process.env.TURRET_RUN_FEE
     })
   }
 
@@ -126,7 +126,7 @@ handler
     ////
 
     // Check for and submit valid upload payment
-    if (!process.env.TURING_UPLOAD_FEE) return
+    if (!process.env.TURRET_UPLOAD_FEE) return
     const transaction = new Transaction(handler.event.body.payment, Networks[process.env.STELLAR_NETWORK])
     const hash = transaction.hash().toString('hex')
 
@@ -149,8 +149,8 @@ handler
 
     if (!find(transaction._operations, {
       type: 'payment',
-      destination: process.env.TURING_VAULT_ADDRESS,
-      amount: new BigNumber(process.env.TURING_UPLOAD_FEE).toFixed(7),
+      destination: process.env.TURRET_ADDRESS,
+      amount: new BigNumber(process.env.TURRET_UPLOAD_FEE).toFixed(7),
       asset: Asset.native()
     })) throw 'Missing or invalid fee payment'
 

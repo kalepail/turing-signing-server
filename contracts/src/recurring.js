@@ -14,16 +14,13 @@ const contractAddr = 'GCB3F2XO3NOHAMOUC2HGRQ4Y2X636UT5EWDP2FNVT7L25W6UT2I4HKKJ'
 // GDW4YTG7DSLOPYLW7GU4ODE4B2DYPVBNQBAXFKRWXQ5MXLCWDNWCJAHO
 // GCHDBB4RMDTN3I7GZ5WMXRWPGTM7IWKERYH45URA24R37JOAF6L4JIJ5
 
-// Turrets
-// aHR0cHM6Ly90dXJpbmctc2lnbmluZy1zZXJ2ZXItMC5zdGVsbGFyLmJ1enosaHR0cHM6Ly90dXJpbmctc2lnbmluZy1zZXJ2ZXItMS5zdGVsbGFyLmJ1eno=
-
 // Fields
 // W3sibmFtZSI6InNvdXJjZSIsInR5cGUiOiJzdHJpbmciLCJkZXNjcmlwdGlvbiI6IlN0ZWxsYXIgYWNjb3VudCB3ZSdyZSBwdWxsaW5nIGEgcmVjdXJyaW5nIHBheW1lbnQgZnJvbSIsInJ1bGUiOiJNdXN0IGJlIGEgdmFsaWQgU3RlbGxhciBhZGRyZXNzIn1d
 
 const server = new Server('https://horizon-testnet.stellar.org')
 const XLM = Asset.native()
 
-async function contract({request, turrets}) {
+async function contract({request, signers}) {
   try {
     const transaction = await server
     .loadAccount(request.source)
@@ -60,10 +57,10 @@ async function contract({request, turrets}) {
         value: now.unix().toString()
       }))
 
-      for (const turret of turrets) {
+      for (const signer of signers) {
         transaction.addOperation(Operation.payment({
-          destination: turret.vault,
-          amount: turret.fee,
+          destination: signer.turret,
+          amount: signer.fee,
           asset: XLM
         }))
       }
@@ -81,17 +78,17 @@ async function contract({request, turrets}) {
 
 export default contract
 
-contract({
-  request: {
-    source: 'GC6DLX5I5UB6T7WABY7GGFLOH3H2JJTF7D4UZ2K6PMKAVX7AE4BE7PUJ'
-  },
-  turrets: [{
-    vault: 'GD6JDEASY6CV2OC3VANDZZTUWKFKRDNPX5SBXH4OPEKHOHPQWN6T657G',
-    fee: '0.1'
-  },{
-    vault: 'GD6JDEASY6CV2OC3VANDZZTUWKFKRDNPX5SBXH4OPEKHOHPQWN6T657G',
-    fee: '0.1'
-  }]
-})
-.then((res) => console.log(res))
-.catch((err) => console.error(err))
+// contract({
+//   request: {
+//     source: 'GC6DLX5I5UB6T7WABY7GGFLOH3H2JJTF7D4UZ2K6PMKAVX7AE4BE7PUJ'
+//   },
+//   signers: [{
+//     turret: 'GD6JDEASY6CV2OC3VANDZZTUWKFKRDNPX5SBXH4OPEKHOHPQWN6T657G',
+//     fee: '0.1'
+//   },{
+//     turret: 'GD6JDEASY6CV2OC3VANDZZTUWKFKRDNPX5SBXH4OPEKHOHPQWN6T657G',
+//     fee: '0.1'
+//   }]
+// })
+// .then((res) => console.log(res))
+// .catch((err) => console.error(err))

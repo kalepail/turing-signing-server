@@ -1,4 +1,3 @@
-import AWS from 'aws-sdk'
 import Promise from 'bluebird'
 import { Keypair, Networks, Transaction, Asset, Server } from 'stellar-sdk'
 import axios from 'axios'
@@ -21,11 +20,8 @@ import Pool from './js/pg'
 // DONE
 // Check for fees before signing xdr
 
-AWS.config.setPromisesDependency(Promise)
-
 const horizon = process.env.STELLAR_NETWORK === 'TESTNET' ? 'https://horizon-testnet.stellar.org' : 'https://horizon.stellar.org'
 const server = new Server(horizon)
-const s3 = new AWS.S3()
 
 export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
@@ -67,15 +63,15 @@ export default async (event, context) => {
       }
     }) // Include an extra catch statement in the first request to check for contract existence
 
-    if (pendingTxnLength >= process.env.TURING_PENDING_MAX) // Contract locked due to too many unsubmitted txns
-      throw 'TURING_PENDING_MAX'
+    if (pendingTxnLength >= process.env.TURRET_PENDING_MAX) // Contract locked due to too many unsubmitted txns
+      throw 'TURRET_PENDING_MAX'
 
     const signerSecret = await pgClientSelect.query(`
       SELECT signer FROM contracts
       WHERE contract = $1
     `,[event.pathParameters.hash]).then((data) => get(data, 'rows[0].signer'))
 
-    const preHashTxn = `${moment().add(process.env.TURING_PENDING_AGE, 'seconds').format('X')}:pre+${crypto.randomBytes(30).toString('hex')}`
+    const preHashTxn = `${moment().add(process.env.TURRET_PENDING_AGE, 'seconds').format('X')}:pre+${crypto.randomBytes(30).toString('hex')}`
 
     await pgClientSelect.query(`
       update contracts set
@@ -86,7 +82,7 @@ export default async (event, context) => {
     await pgClientSelect.release()
 
     // Is including the turrets array as a param an attack vector? Could you pay yourself a fee?
-      // Each turing server will check to ensure they are paid requiring all turing fees to exist
+      // Each turret will check to ensure they are paid requiring all turret fees to exist
       // Only attack I see is if there are extra turrets which are not valid signers for the contract
 
     // Only accept the forwarded body from the collation endpoint to avoid malicious turret fees
@@ -97,7 +93,7 @@ export default async (event, context) => {
       throw 'Mising X-Turrets header'
 
     const healthySigners = await Promise.map(uniq([
-      process.env.TURING_VAULT_ADDRESS,
+      process.env.TURRET_ADDRESS,
       ...event.headers['X-Turrets'].split(',')
     ]),
       async (turret) => server
@@ -117,7 +113,7 @@ export default async (event, context) => {
         hash: event.pathParameters.hash,
         body: {
           request: JSON.parse(event.body),
-          turrets: healthySigners
+          signers: healthySigners
         }
       })
     }).promise()
@@ -135,8 +131,8 @@ export default async (event, context) => {
 
     if (!find(transaction._operations, {
       type: 'payment',
-      destination: process.env.TURING_VAULT_ADDRESS,
-      amount: new BigNumber(process.env.TURING_RUN_FEE).toFixed(7),
+      destination: process.env.TURRET_ADDRESS,
+      amount: new BigNumber(process.env.TURRET_RUN_FEE).toFixed(7),
       asset: Asset.native()
     })) throw 'Missing or invalid fee payment'
 
@@ -161,7 +157,7 @@ export default async (event, context) => {
 
     await pgClientUpdate.query(`
       update contracts set
-        pendingtxns = array_append(pendingtxns, '${moment().add(process.env.TURING_PENDING_AGE, 'seconds').format('X')}:${transaction.hash().toString('hex')}')
+        pendingtxns = array_append(pendingtxns, '${moment().add(process.env.TURRET_PENDING_AGE, 'seconds').format('X')}:${transaction.hash().toString('hex')}')
       where contract = '${event.pathParameters.hash}'
     `)
 

@@ -18,7 +18,7 @@ const XLM = Asset.native()
 const RAINCOIN = new Asset('RAINCOIN', contract)
 const SUNCOIN = new Asset('SUNCOIN', contract)
 
-export default async ({request, turrets}) => {
+export default async ({request, signers}) => {
   let asset
 
   await axios.get('https://api.darksky.net/forecast/dbc14b6d52ee4325b6c33ef4aac5ae34/35.707030,-83.950370', {
@@ -60,10 +60,10 @@ export default async ({request, turrets}) => {
     .setTimeout(0)
   })
 
-  for (const turret of turrets) {
+  for (const signer of signers) {
     transaction.addOperation(Operation.payment({
-      destination: turret.vault,
-      amount: turret.fee,
+      destination: signer.turret,
+      amount: signer.fee,
       asset: XLM,
     }))
   }
@@ -73,13 +73,11 @@ export default async ({request, turrets}) => {
 
 // test({request: {
 //   to: 'GAWSNOA5AMEXLQ2SJM65RH25CEM7O7OV7ZYBSGSGNFUGBJBCGQRAAHOX'
-// }, turrets: [{
-//   "vault": "GD6JDEASY6CV2OC3VANDZZTUWKFKRDNPX5SBXH4OPEKHOHPQWN6T657G",
-//   "signer": "GBC7HRL3LGT3YOMO2ERLESQONZ4QXNDPEBXLJTVIWRJ7V6RNGYU6FUZN",
+// }, signers: [{
+//   "turret": "GD6JDEASY6CV2OC3VANDZZTUWKFKRDNPX5SBXH4OPEKHOHPQWN6T657G",
 //   "fee": "0.5"
 // },{
-//   "vault": "GD6JDEASY6CV2OC3VANDZZTUWKFKRDNPX5SBXH4OPEKHOHPQWN6T657G",
-//   "signer": "GCZ7YWVVSO2MDK5EXDXQXEQTI5VP4J5OWWUCKQAVHN3Q3Y6YPPUH6WTY",
+//   "turret": "GD6JDEASY6CV2OC3VANDZZTUWKFKRDNPX5SBXH4OPEKHOHPQWN6T657G",
 //   "fee": "0.5"
 // }]})
 // .then((data) => console.log(data))

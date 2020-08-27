@@ -1,5 +1,5 @@
 import { Keypair, TransactionBuilder, Networks, BASE_FEE, Operation, Server, StellarTomlResolver } from 'stellar-sdk'
-import { map, get, find, compact, intersection, chain, uniq, uniqBy } from 'lodash'
+import { map, get, find, compact, intersection, chain, uniqBy } from 'lodash'
 import Promise from 'bluebird'
 import axios from 'axios'
 
@@ -8,11 +8,10 @@ import Pool from './js/pg'
 
 // TODO: Ensure a 1:1 swap, if multiple turrets are dead enforce swapping 1 at a time
   // If signer is live but not included in X-Turrets a swap is possible
-  // Vaults rename to Turrets
 
 // // GAVDUDMKRMGDF57IXX745EWKM4UPC3X7LGO6C5NKT4CDQW7MT7L6UXNR // User
 
-// // Signer | Vault
+// // Signer | Turret
 // // GANZKLEAC35NI4C5VQSQIUNITHFAOTVQZWIEJRS2EQBHRBMHNP66OQR4 // 0 // GCQIG3PL446FRQUPURVJ3L3MIAB62YPSNWB7PNU72EUOASYS3FDM6VPY // Included by default when pinging tss-0
 // // GCIFRINKY2PXE22526XQ6HKNMZD4NDTBO6MQEGL7NQ7RKJPSEOBR5FFX // 1 // GCC63HKFK2NGRPB6GWGDGCPAU3XG5E545O32G3VGTYX2O73QIKB7NZ5Z
 // // GCS5OSF7RJRDPYKSTQZPFRLD5WJN6ZHANSSCPQNLRQ4NULQO2BMZMH7B // ? // 2 // GDFXSY7WAMLUABSPTFDG7KJVUDM2DMJXO6OGEIBQYRLWKHW2DTFBWBPL
@@ -26,7 +25,7 @@ export default async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false
 
   try {
-    const { source, account, removeTurret, addTurret } = JSON.parse(event.body)
+    const { source, account, remove, add } = JSON.parse(event.body)
 
     const { requiredThreshold, existingSigners } = await server
     .loadAccount(account)
@@ -37,7 +36,7 @@ export default async (event, context) => {
         const signer = find(account.signers, {key: value})
 
         return key.indexOf('TSS') === 0 && signer ? {
-          vault: key.replace('TSS_', ''),
+          turret: key.replace('TSS_', ''),
           signer: value,
           weight: signer.weight
         } : null
@@ -49,14 +48,14 @@ export default async (event, context) => {
       }
     })
 
-    const incomingVaultKeys = await Promise.map(uniqBy([
-      {vault: addTurret},
+    const incomingTurretKeys = await Promise.map(uniqBy([
+      {turret: add},
       ...existingSigners
-    ], 'vault'), async (signer) => {
+    ], 'turret'), async (signer) => {
       return {
         ...signer,
         ...await server
-        .loadAccount(signer.vault)
+        .loadAccount(signer.turret)
         .then((account) => axios
           .get(`${tssRoute(account)}/contract/${event.pathParameters.hash}`)
           .then(async ({data}) => ({
@@ -68,17 +67,17 @@ export default async (event, context) => {
       }
     })
 
-    const deadSigner = find(incomingVaultKeys, {vault: removeTurret})
+    const removeSigner = find(incomingTurretKeys, {turret: remove})
 
-    if (!deadSigner || deadSigner.toml)
+    if (!removeSigner || removeSigner.toml)
       throw 'Signer is not able to be removed'
 
-    const swapSigner = find(incomingVaultKeys, {vault: addTurret})
+    const addSigner = find(incomingTurretKeys, {turret: add})
 
-    if (!swapSigner || !swapSigner.toml)
+    if (!addSigner || !addSigner.toml)
       throw 'Signer is not able to be added'
 
-    const hasThreshold = chain(incomingVaultKeys)
+    const hasThreshold = chain(incomingTurretKeys)
     .filter((signer) => signer.toml && signer.weight)
     .sumBy('weight')
     .value()
@@ -86,10 +85,10 @@ export default async (event, context) => {
     if (hasThreshold < requiredThreshold)
       throw 'Insufficient signer threshold'
 
-    const turrets = intersection(...compact(map(incomingVaultKeys, 'toml.TSS.TURRETS')))
+    const turrets = intersection(...compact(map(incomingTurretKeys, 'toml.TSS.TURRETS')))
 
-    if (turrets.indexOf(swapSigner.vault) === -1)
-      throw `Swap vault ${swapSigner.vault} isn't trusted by existing vaults`
+    if (turrets.indexOf(addSigner.turret) === -1)
+      throw `New turret isn't trusted by existing signer turrets`
 
     const transaction = await server
     .loadAccount(source)
@@ -99,14 +98,14 @@ export default async (event, context) => {
     })
     .addOperation(Operation.setOptions({
       signer: {
-        ed25519PublicKey: deadSigner.signer,
+        ed25519PublicKey: removeSigner.signer,
         weight: 0
       }
     }))
     .addOperation(Operation.setOptions({
       signer: {
-        ed25519PublicKey: swapSigner.signer,
-        weight: deadSigner.weight
+        ed25519PublicKey: addSigner.signer,
+        weight: removeSigner.weight
       }
     }))
     .setTimeout(0)

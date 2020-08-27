@@ -45,8 +45,8 @@ export default async (event, context) => {
         contract,
         fields,
         signer: signerKeypair.publicKey(),
-        vault: process.env.TURING_VAULT_ADDRESS,
-        fee: process.env.TURING_RUN_FEE
+        turret: process.env.TURRET_ADDRESS,
+        fee: process.env.TURRET_RUN_FEE
     })
   }
 

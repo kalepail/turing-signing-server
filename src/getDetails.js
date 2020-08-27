@@ -37,9 +37,9 @@ export default async (event, context) => {
     ).then((contracts) => compact(contracts)) // Don't throw on missing contracts
 
     return createJsonResponse({
-      vault: process.env.TURING_VAULT_ADDRESS,
-      runFee: process.env.TURING_RUN_FEE,
-      uploadFee: process.env.TURING_UPLOAD_FEE,
+      turret: process.env.TURRET_ADDRESS,
+      runFee: process.env.TURRET_RUN_FEE,
+      uploadFee: process.env.TURRET_UPLOAD_FEE,
       network: process.env.STELLAR_NETWORK,
       contracts
     })
