@@ -32,7 +32,7 @@ export function tssRoute(account) {
     break;
   }
 
-  return isDev ? `https://localhost:400${instance}/dev` : account.home_domain
+  return `https://${isDev ? `localhost:400${instance}/dev` : account.home_domain}`
 }
 
 export function createJsonResponse(data) {

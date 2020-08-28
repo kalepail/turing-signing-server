@@ -18,7 +18,7 @@ import Pool from './js/pg'
 // // GBQ4FNTGKEJMCS4HOIWOFUZYBX5OV5EWEPY4J4LGSQMK3SRNPXMOGDYX // ? // 3 // GDWWCJLFOSWHBLGWIYECP4ZJECNTMW2VMWV3C5T733KVFQQRE57CFZKD
 // // GCVJXKA3WVGA4NQI3UVUQOGIXQN3LHZGANWEEFLUIWUHPKLIJFGEMYVE // 4 // GCBUD7XJUSMAACYIVF7ZGXFMJGTSUHS446NBZZAXPI365UQDEMXXUHXF
 
-const horizon = process.env.STELLAR_NETWORK === 'TESTNET' ? 'https://horizon-testnet.stellar.org' : 'https://horizon.stellar.org'
+const horizon = process.env.STELLAR_NETWORK === 'PUBLIC' ? 'https://horizon.stellar.org' : 'https://horizon-testnet.stellar.org'
 const server = new Server(horizon)
 
 export default async (event, context) => {

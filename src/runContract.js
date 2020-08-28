@@ -20,7 +20,7 @@ import Pool from './js/pg'
 // DONE
 // Check for fees before signing xdr
 
-const horizon = process.env.STELLAR_NETWORK === 'TESTNET' ? 'https://horizon-testnet.stellar.org' : 'https://horizon.stellar.org'
+const horizon = process.env.STELLAR_NETWORK === 'PUBLIC' ? 'https://horizon.stellar.org' : 'https://horizon-testnet.stellar.org'
 const server = new Server(horizon)
 
 export default async (event, context) => {

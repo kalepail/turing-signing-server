@@ -13,7 +13,7 @@ import Pool from './js/pg'
 // DONE
 // Immediately flush if a txn exists on the blockchain (incurs the cost of looking that data up)
 
-const horizon = process.env.STELLAR_NETWORK === 'TESTNET' ? 'https://horizon-testnet.stellar.org' : 'https://horizon.stellar.org'
+const horizon = process.env.STELLAR_NETWORK === 'PUBLIC' ? 'https://horizon.stellar.org' : 'https://horizon-testnet.stellar.org'
 const server = new Server(horizon)
 
 export default async (event, context) => {

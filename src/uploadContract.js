@@ -23,7 +23,7 @@ import Pool from './js/pg'
 
 AWS.config.setPromisesDependency(Promise)
 
-const horizon = process.env.STELLAR_NETWORK === 'TESTNET' ? 'https://horizon-testnet.stellar.org' : 'https://horizon.stellar.org'
+const horizon = process.env.STELLAR_NETWORK === 'PUBLIC' ? 'https://horizon.stellar.org' : 'https://horizon-testnet.stellar.org'
 const server = new Server(horizon)
 const s3 = new AWS.S3()
 
