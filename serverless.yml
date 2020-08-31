@@ -56,9 +56,9 @@ functions:
   getToml:
     handler: src/getToml.default
     iamRoleStatements: []
-    timeout: 3
     maximumRetryAttempts: 0
     maximumRecordAgeInSeconds: 0
+    timeout: 3
     webpack:
       toml: true
     events:
@@ -73,9 +73,9 @@ functions:
     handler: src/getDetails.default
     environment: ${file(.env-${opt:instance}.yml)}
     iamRoleStatements: []
-    timeout: 3
     maximumRetryAttempts: 0
     maximumRecordAgeInSeconds: 0
+    timeout: 3
     events:
       - http:
           path: /
@@ -93,12 +93,11 @@ functions:
           - s3:GetObject
           - s3:PutObject
           - s3:PutObjectAcl
-          - s3:PutObjectTagging
         Resource: arn:aws:s3:::turing-signing-server-${opt:instance}/*
-    timeout: 9
     maximumRetryAttempts: 0
     maximumRecordAgeInSeconds: 0
     reservedConcurrency: 6
+    timeout: 9
     events:
       - http:
           path: contract
@@ -107,34 +106,13 @@ functions:
             origin: '*'
             cacheControl: 'public; max-age=14400'
 
-  updateContract:
-    handler: src/updateContract.default
-    environment: ${file(.env-${opt:instance}.yml)}
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - s3:DeleteObjectTagging
-          - s3:PutObjectTagging
-        Resource: arn:aws:s3:::turing-signing-server-${opt:instance}/*
-    timeout: 6
-    maximumRetryAttempts: 0
-    maximumRecordAgeInSeconds: 0
-    reservedConcurrency: 6
-    events:
-      - http:
-          path: contract/{hash}
-          method: PUT
-          cors:
-            origin: '*'
-            cacheControl: 'public; max-age=14400'
-
   getContract:
     handler: src/getContract.default
     environment: ${file(.env-${opt:instance}.yml)}
     iamRoleStatements: []
-    timeout: 3
     maximumRetryAttempts: 0
     maximumRecordAgeInSeconds: 0
+    timeout: 3
     events:
       - http:
           path: contract/{hash}
@@ -149,39 +127,31 @@ functions:
     iamRoleStatements:
       - Effect: Allow
         Action:
-          - s3:GetObjectTagging
-        Resource: arn:aws:s3:::turing-signing-server-${opt:instance}/*
-      - Effect: Allow
-        Action:
           - lambda:InvokeFunction
         Resource: '*'
-    timeout: 9
-    reservedConcurrency: 9
     maximumRetryAttempts: 0
     maximumRecordAgeInSeconds: 0
+    reservedConcurrency: 9
+    timeout: 9
     events:
       - http:
-          path: contract/{hash}/run
+          path: contract/{hash}
           method: POST
           cors:
             origin: '*'
             cacheControl: 'public; max-age=14400'
 
-  runContractCollate:
-    handler: src/runContractCollate.default
+  healContract:
+    handler: src/healContract.default
     environment: ${file(.env-${opt:instance}.yml)}
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - s3:GetObjectTagging
-        Resource: arn:aws:s3:::turing-signing-server-${opt:instance}/*
-    timeout: 12
+    iamRoleStatements: []
     maximumRetryAttempts: 0
     maximumRecordAgeInSeconds: 0
+    timeout: 3
     events:
       - http:
-          path: contract/{hash}/run/collate
-          method: POST
+          path: contract/{hash}
+          method: PUT
           cors:
             origin: '*'
             cacheControl: 'public; max-age=14400'

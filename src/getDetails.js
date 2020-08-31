@@ -6,9 +6,6 @@ import Promise from 'bluebird'
 import { createJsonResponse, parseError } from './js/utils'
 import Pool from './js/pg'
 
-// TODO
-// Add another collation get endpoint which gets a contract's turrets and returns an array response of all turret data
-
 AWS.config.setPromisesDependency(Promise)
 
 const s3 = new AWS.S3()
@@ -31,9 +28,8 @@ export default async (event, context) => {
         Key: contract
       })
       .promise()
-      .then(({Metadata: {fields, authkey}}) => ({
+      .then(({Metadata: {fields}}) => ({
         contract: contract,
-        authkey,
         signer: Keypair.fromSecret(signer).publicKey(),
         fields: fields ? JSON.parse(Buffer.from(fields, 'base64').toString('utf8')) : undefined,
       }))
@@ -41,9 +37,9 @@ export default async (event, context) => {
     ).then((contracts) => compact(contracts)) // Don't throw on missing contracts
 
     return createJsonResponse({
-      vault: process.env.TURING_VAULT_ADDRESS,
-      runFee: process.env.TURING_RUN_FEE,
-      uploadFee: process.env.TURING_UPLOAD_FEE,
+      turret: process.env.TURRET_ADDRESS,
+      runFee: process.env.TURRET_RUN_FEE,
+      uploadFee: process.env.TURRET_UPLOAD_FEE,
       network: process.env.STELLAR_NETWORK,
       contracts
     })

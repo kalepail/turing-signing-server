@@ -24,12 +24,9 @@ const contract = 'GCMII67Q32ZSIXM3FO5T6IEIWZ56IKTSV73YVYXFI3VCXRHNDRJ7DRMR'
 // GDBGX4HQ2FOWQ25QE3QSJTQPGJQ3AXBSQR6GWSSOUWSNDC6QWPHCPZIR
 // SDXWJQFF7JKA2DJXOPTQO5GZVO5SBL2ZXRP7AKZ3OKHE6JJ7EZYYJMAB
 
-// Turrets
-// aHR0cHM6Ly90dXJpbmctc2lnbmluZy1zZXJ2ZXItMC5zdGVsbGFyLmJ1enosaHR0cHM6Ly90dXJpbmctc2lnbmluZy1zZXJ2ZXItMS5zdGVsbGFyLmJ1enosaHR0cHM6Ly90dXJpbmctc2lnbmluZy1zZXJ2ZXItMi5zdGVsbGFyLmJ1enosaHR0cHM6Ly90dXJpbmctc2lnbmluZy1zZXJ2ZXItMy5zdGVsbGFyLmJ1enosaHR0cHM6Ly90dXJpbmctc2lnbmluZy1zZXJ2ZXItNC5zdGVsbGFyLmJ1eno=
-
 const XLM = Asset.native()
 
-export default async ({turrets}) => {
+export default async ({signers}) => {
   try {
     const server = new Server('https://horizon-testnet.stellar.org')
 
@@ -84,10 +81,10 @@ export default async ({turrets}) => {
         .setTimeout(0)
       })
 
-      for (const turret of turrets) {
+      for (const signer of signers) {
         transaction.addOperation(Operation.payment({
-          destination: turret.vault,
-          amount: turret.fee,
+          destination: signer.turret,
+          amount: signer.fee,
           asset: XLM
         }))
       }

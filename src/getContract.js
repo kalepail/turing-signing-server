@@ -4,9 +4,6 @@ import { createJsonResponse, parseError } from './js/utils'
 import Pool from './js/pg'
 import AWS from 'aws-sdk'
 
-// TODO
-// Add another collation get endpoint which gets a contract's turrets and returns an array response of all turret data
-
 AWS.config.setPromisesDependency(Promise)
 
 const s3 = new AWS.S3()
@@ -38,9 +35,8 @@ export default async (event, context) => {
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: event.pathParameters.hash,
     }).promise()
-    .then(({Metadata: {fields, authkey}}) => ({
-      fields: fields ? JSON.parse(Buffer.from(fields, 'base64').toString('utf8')) : undefined,
-      authkey
+    .then(({Metadata: {fields}}) => ({
+      fields: fields ? JSON.parse(Buffer.from(fields, 'base64').toString('utf8')) : undefined
     }))
 
     const signerKeypair = Keypair.fromSecret(signerSecret)
@@ -49,8 +45,8 @@ export default async (event, context) => {
         contract,
         fields,
         signer: signerKeypair.publicKey(),
-        vault: process.env.TURING_VAULT_ADDRESS,
-        fee: process.env.TURING_RUN_FEE
+        turret: process.env.TURRET_ADDRESS,
+        fee: process.env.TURRET_RUN_FEE
     })
   }
 

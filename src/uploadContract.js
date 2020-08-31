@@ -5,7 +5,7 @@ import httpMultipartBodyParser from '@tinyanvil/http-multipart-body-parser'
 import httpHeaderNormalizer from '@middy/http-header-normalizer'
 import doNotWaitForEmptyEventLoop from '@middy/do-not-wait-for-empty-event-loop'
 import Promise from 'bluebird'
-import { map, find } from 'lodash'
+import { find } from 'lodash'
 import shajs from 'sha.js'
 import BigNumber from 'bignumber.js'
 
@@ -13,17 +13,17 @@ import { parseError, createJsonResponse } from './js/utils'
 import Pool from './js/pg'
 
 // TODO
-// Add a collation endpoint which takes the turrets and forwards on the contract to the other turrets and sends back the responses in an array
+// Contract hash should include fields as well as contract code
 
 // DONE
-// Require TURING_UPLOAD_FEE to be paid in a presigned txn to the TURING_VAULT_ADDRESS
+// Require TURRET_UPLOAD_FEE to be paid in a presigned txn to the TURRET_ADDRESS
 // If fileSize limit is hit throw error
   // https://github.com/middyjs/middy/tree/master/packages/http-multipart-body-parser
   // https://github.com/mscdex/busboy/issues/76
 
 AWS.config.setPromisesDependency(Promise)
 
-const horizon = process.env.STELLAR_NETWORK === 'TESTNET' ? 'https://horizon-testnet.stellar.org' : 'https://horizon.stellar.org'
+const horizon = process.env.STELLAR_NETWORK === 'PUBLIC' ? 'https://horizon.stellar.org' : 'https://horizon-testnet.stellar.org'
 const server = new Server(horizon)
 const s3 = new AWS.S3()
 
@@ -32,15 +32,10 @@ const originalHandler = async (event) => {
     const signer = Keypair.random()
     const codeHash = shajs('sha256').update(event.body.contract.content).digest('hex')
 
-    const Tagging = map(
-      Buffer.from(event.body.turrets, 'base64').toString('utf8').split(','),
-      (turret, i) => `Turret_${i}=${Buffer.from(turret, 'utf8').toString('base64')}`
-    ).join('&')
-
-    const Metadata = {AuthKey: event.body.authkey}
+    let Metadata
 
     if (event.body.fields)
-      Metadata.Fields = event.body.fields
+      Metadata = {Fields: event.body.fields}
 
     await s3.putObject({
       Bucket: process.env.AWS_BUCKET_NAME,
@@ -52,7 +47,6 @@ const originalHandler = async (event) => {
       CacheControl: 'public; max-age=31536000',
       ACL: 'public-read',
       Metadata,
-      Tagging
     }).promise()
 
     const pgClient = await Pool.connect()
@@ -66,9 +60,9 @@ const originalHandler = async (event) => {
 
     return createJsonResponse({
       hash: codeHash,
-      vault: process.env.TURING_VAULT_ADDRESS,
+      turret: process.env.TURRET_ADDRESS,
       signer: signer.publicKey(),
-      fee: process.env.TURING_RUN_FEE
+      fee: process.env.TURRET_RUN_FEE
     })
   }
 
@@ -132,7 +126,7 @@ handler
     ////
 
     // Check for and submit valid upload payment
-    if (!process.env.TURING_UPLOAD_FEE) return
+    if (!process.env.TURRET_UPLOAD_FEE) return
     const transaction = new Transaction(handler.event.body.payment, Networks[process.env.STELLAR_NETWORK])
     const hash = transaction.hash().toString('hex')
 
@@ -155,8 +149,8 @@ handler
 
     if (!find(transaction._operations, {
       type: 'payment',
-      destination: process.env.TURING_VAULT_ADDRESS,
-      amount: new BigNumber(process.env.TURING_UPLOAD_FEE).toFixed(7),
+      destination: process.env.TURRET_ADDRESS,
+      amount: new BigNumber(process.env.TURRET_UPLOAD_FEE).toFixed(7),
       asset: Asset.native()
     })) throw 'Missing or invalid fee payment'
 
