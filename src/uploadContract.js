@@ -12,10 +12,8 @@ import BigNumber from 'bignumber.js'
 import { parseError, createJsonResponse } from './js/utils'
 import Pool from './js/pg'
 
-// TODO
-// Contract hash should include fields as well as contract code
-
 // DONE
+// Contract hash should include fields as well as contract code
 // Require TURRET_UPLOAD_FEE to be paid in a presigned txn to the TURRET_ADDRESS
 // If fileSize limit is hit throw error
   // https://github.com/middyjs/middy/tree/master/packages/http-multipart-body-parser
@@ -30,7 +28,7 @@ const s3 = new AWS.S3()
 const originalHandler = async (event) => {
   try {
     const signer = Keypair.random()
-    const codeHash = shajs('sha256').update(event.body.contract.content).digest('hex')
+    const codeHash = shajs('sha256').update(event.body.contract.content).update(event.body.fields || '').digest('hex')
 
     let Metadata
 
@@ -103,7 +101,7 @@ handler
       throw 'Contract file is too big'
 
     // Check if contract has already been uploaded
-    const codeHash = shajs('sha256').update(handler.event.body.contract.content).digest('hex')
+    const codeHash = shajs('sha256').update(handler.event.body.contract.content).update(handler.event.body.fields || '').digest('hex')
 
     const s3Contract = await s3.headObject({
       Bucket: process.env.AWS_BUCKET_NAME,
@@ -126,35 +124,35 @@ handler
     ////
 
     // Check for and submit valid upload payment
-    if (!process.env.TURRET_UPLOAD_FEE) return
-    const transaction = new Transaction(handler.event.body.payment, Networks[process.env.STELLAR_NETWORK])
-    const hash = transaction.hash().toString('hex')
+    // if (!process.env.TURRET_UPLOAD_FEE) return
+    // const transaction = new Transaction(handler.event.body.payment, Networks[process.env.STELLAR_NETWORK])
+    // const hash = transaction.hash().toString('hex')
 
-    await server
-    .transactions()
-    .transaction(hash)
-    .call()
-    .catch((err) => err)
-    .then((err) => {
-      if (
-        err.response
-        && err.response.status === 404
-      ) return
+    // await server
+    // .transactions()
+    // .transaction(hash)
+    // .call()
+    // .catch((err) => err)
+    // .then((err) => {
+    //   if (
+    //     err.response
+    //     && err.response.status === 404
+    //   ) return
 
-      else if (err.response)
-        throw err
+    //   else if (err.response)
+    //     throw err
 
-      throw 'Transaction has already been submitted'
-    })
+    //   throw 'Transaction has already been submitted'
+    // })
 
-    if (!find(transaction._operations, {
-      type: 'payment',
-      destination: process.env.TURRET_ADDRESS,
-      amount: new BigNumber(process.env.TURRET_UPLOAD_FEE).toFixed(7),
-      asset: Asset.native()
-    })) throw 'Missing or invalid fee payment'
+    // if (!find(transaction._operations, {
+    //   type: 'payment',
+    //   destination: process.env.TURRET_ADDRESS,
+    //   amount: new BigNumber(process.env.TURRET_UPLOAD_FEE).toFixed(7),
+    //   asset: Asset.native()
+    // })) throw 'Missing or invalid fee payment'
 
-    await server.submitTransaction(transaction)
+    // await server.submitTransaction(transaction)
     ////
 
     return
