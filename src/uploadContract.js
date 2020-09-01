@@ -124,35 +124,35 @@ handler
     ////
 
     // Check for and submit valid upload payment
-    // if (!process.env.TURRET_UPLOAD_FEE) return
-    // const transaction = new Transaction(handler.event.body.payment, Networks[process.env.STELLAR_NETWORK])
-    // const hash = transaction.hash().toString('hex')
+    if (!process.env.TURRET_UPLOAD_FEE) return
+    const transaction = new Transaction(handler.event.body.payment, Networks[process.env.STELLAR_NETWORK])
+    const hash = transaction.hash().toString('hex')
 
-    // await server
-    // .transactions()
-    // .transaction(hash)
-    // .call()
-    // .catch((err) => err)
-    // .then((err) => {
-    //   if (
-    //     err.response
-    //     && err.response.status === 404
-    //   ) return
+    await server
+    .transactions()
+    .transaction(hash)
+    .call()
+    .catch((err) => err)
+    .then((err) => {
+      if (
+        err.response
+        && err.response.status === 404
+      ) return
 
-    //   else if (err.response)
-    //     throw err
+      else if (err.response)
+        throw err
 
-    //   throw 'Transaction has already been submitted'
-    // })
+      throw 'Transaction has already been submitted'
+    })
 
-    // if (!find(transaction._operations, {
-    //   type: 'payment',
-    //   destination: process.env.TURRET_ADDRESS,
-    //   amount: new BigNumber(process.env.TURRET_UPLOAD_FEE).toFixed(7),
-    //   asset: Asset.native()
-    // })) throw 'Missing or invalid fee payment'
+    if (!find(transaction._operations, {
+      type: 'payment',
+      destination: process.env.TURRET_ADDRESS,
+      amount: new BigNumber(process.env.TURRET_UPLOAD_FEE).toFixed(7),
+      asset: Asset.native()
+    })) throw 'Missing or invalid fee payment'
 
-    // await server.submitTransaction(transaction)
+    await server.submitTransaction(transaction)
     ////
 
     return
