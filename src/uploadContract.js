@@ -141,8 +141,7 @@ handler
     .transactions()
     .transaction(hash)
     .call()
-    .catch((err) => err)
-    .then((err) => {
+    .catch((err) => {
       if (
         err.response
         && err.response.status === 404

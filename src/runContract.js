@@ -111,8 +111,7 @@ export default async (event, context) => {
       .transactions()
       .transaction(hash)
       .call()
-      .catch((err) => err)
-      .then((err) => {
+      .catch((err) => {
         if (
           err.response
           && err.response.status === 404
@@ -185,8 +184,7 @@ export default async (event, context) => {
       .transactions()
       .transaction(hash)
       .call()
-      .catch((err) => err)
-      .then((err) => {
+      .catch((err) => {
         if (
           err.response
           && err.response.status === 404
