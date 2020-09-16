@@ -30,7 +30,7 @@
     "glob": "^7.1.6",
     "path": "^0.12.7",
     "serverless": "^2.1.0",
-    "serverless-domain-manager": "^4.2.1",
+    "serverless-domain-manager": "^4.2.0",
     "serverless-iam-roles-per-function": "^2.0.2",
     "serverless-offline": "6.7.0",
     "serverless-webpack": "^5.3.5",
