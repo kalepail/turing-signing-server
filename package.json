@@ -29,7 +29,7 @@
     "clean-webpack-plugin": "^3.0.0",
     "glob": "^7.1.6",
     "path": "^0.12.7",
-    "serverless": "^2.1.0",
+    "serverless": "^1.83.0",
     "serverless-domain-manager": "^4.2.0",
     "serverless-iam-roles-per-function": "^2.0.2",
     "serverless-offline": "6.7.0",

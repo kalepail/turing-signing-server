@@ -96,8 +96,11 @@ export default async (event, context) => {
       signers: []
     }
 
-    if (event.headers['X-Payment']) {
-      const transaction = new Transaction(event.headers['X-Payment'], Networks[process.env.STELLAR_NETWORK])
+    const PaymentHeader = event.headers['X-Payment'] || event.headers['x-payment']
+    const TurretsHeader = event.headers['X-Turrets'] || event.headers['x-turrets']
+
+    if (PaymentHeader) {
+      const transaction = new Transaction(PaymentHeader, Networks[process.env.STELLAR_NETWORK])
       const hash = transaction.hash().toString('hex')
 
       if (!find(transaction._operations, {
@@ -126,10 +129,10 @@ export default async (event, context) => {
       await server.submitTransaction(transaction)
     }
 
-    else if (event.headers['X-Turrets']) {
+    else if (TurretsHeader) {
       contractBody.signers = await Promise.map(uniq([
         process.env.TURRET_ADDRESS,
-        ...event.headers['X-Turrets'].split(',')
+        ...TurretsHeader.split(',')
       ]),
         async (turret) => server
         .loadAccount(turret)
@@ -168,8 +171,8 @@ export default async (event, context) => {
     const transaction = new Transaction(xdr, Networks[process.env.STELLAR_NETWORK])
 
     if (
-      !event.headers['X-Payment']
-      && event.headers['X-Turrets']
+      !PaymentHeader
+      && TurretsHeader
     ) {
       const hash = transaction.hash().toString('hex')
 
