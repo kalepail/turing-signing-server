@@ -27,6 +27,8 @@ export default async (event, context) => {
   }
 
   catch(err) {
+    err = typeof err === 'string' ? JSON.parse(err) : err
+
     const error =
     typeof err === 'string'
     ? err

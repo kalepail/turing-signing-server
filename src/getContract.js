@@ -46,7 +46,6 @@ export default async (event, context) => {
         fields,
         signer: signerKeypair.publicKey(),
         turret: process.env.TURRET_ADDRESS,
-        fee: process.env.TURRET_RUN_FEE
     })
   }
 

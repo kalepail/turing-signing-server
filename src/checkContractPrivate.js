@@ -1,7 +1,7 @@
-import { Server } from 'stellar-sdk'
-import Promise from 'bluebird'
-import { uniqBy, get, chain, compact } from 'lodash'
+import { Server, TransactionBuilder, BASE_FEE, Networks, Asset, Keypair, Operation } from 'stellar-sdk'
+import { get, chain, each, groupBy, map } from 'lodash'
 import moment from 'moment'
+import BigNumber from 'bignumber.js'
 
 import Pool from './js/pg'
 
@@ -9,9 +9,6 @@ import Pool from './js/pg'
 // We should only run horizon checks occasionally and not as a response to a contract call
   // Gotta watch for horizon rate limits, this should probably be throttled to 1 request per second
   // Not really a huge deal to hit rate limits as it will just look again the next time it runs
-
-// DONE
-// Immediately flush if a txn exists on the blockchain (incurs the cost of looking that data up)
 
 const horizon = process.env.STELLAR_NETWORK === 'PUBLIC' ? 'https://horizon.stellar.org' : 'https://horizon-testnet.stellar.org'
 const server = new Server(horizon)
@@ -22,51 +19,66 @@ export default async (event, context) => {
   try {
     const pgClient = await Pool.connect()
 
-    const contractPendingTxns = await pgClient.query(`
+    const pendingList = await pgClient.query(`
       select pendingtxns
         from contracts
       WHERE contract = $1
     `,[event.hash]).then((data) => get(data, 'rows[0].pendingtxns'))
 
-    const uniqTxns = uniqBy(contractPendingTxns, (txn) => {
-      const [time, hash] = txn.split(':')
-      return hash
-    })
+    const payList = chain(pendingList)
+    .filter((txn) => {
+      const [time] = txn.split(':')
 
-    const liveTxns = await new Promise.map(uniqTxns, (txn) => {
-      const [time, hash] = txn.split(':')
-
-      return server
-      .transactions()
-      .transaction(hash)
-      .call()
-      .then(() => hash)
-      .catch(() => null)
-    }, {concurrency: 1})
-    .then((data) => compact(data))
-    .then((liveTxns) => chain(contractPendingTxns)
-      .map((txn) => {
-        const [time, hash] = txn.split(':')
-        return liveTxns.indexOf(hash) > -1 ? txn : null
-      })
-      .compact()
-      .value()
-    )
-
-    const expiredTxns = chain(contractPendingTxns)
-    .map((txn) => {
-      const [time, hash] = txn.split(':')
-
-      if (moment(parseInt(time, 10), 'X').isBefore())
+      if (moment.utc(parseInt(time), 'X').isBefore())
         return txn
     })
-    .compact()
+    .take(100)
     .value()
 
-    const flushList = Object.assign([], liveTxns, expiredTxns)
+    if (payList.length) {
+      console.log(`Flush ${payList.length} txns`)
 
-    if (flushList.length) {
-      console.log(`Flush ${flushList.length} txns`)
+      const turretKeypair = Keypair.fromSecret(process.env.TURRET_SEK)
+
+      await server.loadAccount(turretKeypair.publicKey())
+      .then((account) => {
+        let transaction = new TransactionBuilder(account, {
+          fee: BASE_FEE,
+          networkPassphrase: Networks.TESTNET
+        }).setTimeout(0)
+
+        const payListGrouped = groupBy(payList, (txn) => {
+          const [,
+            source,
+          ] = txn.split(':')
+
+          return source
+        })
+
+        each(payListGrouped, (payListSource, source) => {
+          const amounts = map(payListSource, (txn) => {
+            const [,,
+              amount
+            ] = txn.split(':')
+
+            return amount
+          })
+
+          const amount = BigNumber.sum(...amounts).toFixed(7)
+
+          transaction.addOperation(Operation.payment({
+            asset: Asset.native(),
+            amount,
+            destination: account.id,
+            source,
+          }))
+        })
+
+        transaction = transaction.build()
+        transaction.sign(turretKeypair)
+
+        return server.submitTransaction(transaction)
+      })
 
       await pgClient.query(`
         update contracts
@@ -77,7 +89,9 @@ export default async (event, context) => {
           and elem <> all($2)
         )
         where contract = $1
-      `,[event.hash, flushList])
+      `,[event.hash, payList])
+
+      console.log(`Flushed`)
     }
 
     await pgClient.release()
@@ -89,7 +103,7 @@ export default async (event, context) => {
   }
 
   catch(err) {
-    console.error(err)
+    err = typeof err === 'string' ? JSON.parse(err) : err
 
     const error =
     typeof err === 'string'
@@ -102,6 +116,8 @@ export default async (event, context) => {
     : err.message
     ? err.message
     : undefined
+
+    console.error(err)
 
     return {
       isError: true,

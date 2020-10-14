@@ -38,7 +38,6 @@ export default async (event, context) => {
 
     return createJsonResponse({
       turret: process.env.TURRET_ADDRESS,
-      runFee: process.env.TURRET_RUN_FEE,
       uploadFee: process.env.TURRET_UPLOAD_FEE,
       network: process.env.STELLAR_NETWORK,
       contracts

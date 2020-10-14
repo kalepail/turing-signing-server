@@ -46,13 +46,13 @@ export default async ({signers}) => {
 
     if (
       payout
-      && moment(payout.created_at).add(1, 'hour').isBefore()
+      && moment.utc(payout.created_at).add(1, 'hour').isBefore()
     ) {
       const players = filter(operations, (record) =>
         record.to === contract
         && record.from !== contract
         && record.type === 'payment'
-        && moment(record.created_at).isAfter(payout.created_at)
+        && moment.utc(record.created_at).isAfter(payout.created_at)
       )
 
       const pool = BigNumber.sum(...map(players, 'amount')).toString()

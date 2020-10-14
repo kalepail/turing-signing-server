@@ -60,7 +60,6 @@ const originalHandler = async (event) => {
       hash: codeHash,
       turret: process.env.TURRET_ADDRESS,
       signer: signer.publicKey(),
-      fee: process.env.TURRET_RUN_FEE
     })
   }
 

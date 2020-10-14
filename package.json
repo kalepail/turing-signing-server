@@ -40,6 +40,7 @@
     "webpack-node-externals": "^2.5.2"
   },
   "dependencies": {
+    "@borderless/parse-authorization": "^1.0.0",
     "@middy/core": "^1.4.0",
     "@middy/do-not-wait-for-empty-event-loop": "^1.4.0",
     "@middy/http-header-normalizer": "^1.4.0",
@@ -53,6 +54,7 @@
     "copy-webpack-plugin": "^6.1.0",
     "crypto": "^1.0.1",
     "fs": "0.0.1-security",
+    "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.20",
     "moment": "^2.28.0",
     "pg": "^8.3.3",
