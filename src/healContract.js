@@ -3,7 +3,7 @@ import { map, get, find, compact, intersection, chain, uniqBy } from 'lodash'
 import Promise from 'bluebird'
 import axios from 'axios'
 
-import { tssRoute, createJsonResponse, parseError } from './js/utils'
+import { turretRoute, createJsonResponse, parseError } from './js/utils'
 import Pool from './js/pg'
 
 // // GAVDUDMKRMGDF57IXX745EWKM4UPC3X7LGO6C5NKT4CDQW7MT7L6UXNR // User
@@ -54,7 +54,7 @@ export default async (event, context) => {
         ...await server
         .loadAccount(signer.turret)
         .then((account) => axios
-          .get(`${tssRoute(account)}/contract/${event.pathParameters.hash}`)
+          .get(`${turretRoute(account)}/contract/${event.pathParameters.hash}`)
           .then(async ({data}) => ({
             signer: data.signer,
             toml: account.home_domain ? await StellarTomlResolver.resolve(account.home_domain) : null,

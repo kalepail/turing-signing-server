@@ -7,7 +7,7 @@ drop table contracts
 CREATE TABLE contracts(
 	contract VARCHAR(64) PRIMARY KEY UNIQUE NOT NULL,
 	signer VARCHAR(56) UNIQUE NOT NULL,
-	pendingTxns VARCHAR(75)[] DEFAULT NULL
+	pendingTxns VARCHAR(96)[] DEFAULT NULL
 )
 
 ALTER TABLE contracts

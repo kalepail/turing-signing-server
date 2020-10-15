@@ -22,6 +22,7 @@ import {
 import Pool from './js/pg'
 
 // GLOBAL TODO: pg Pools should be released even if there are errors
+// GLOBAL TODO: there are a few places where Network.TESTNET and testnet horizon is hardcoded
 
 const horizon = process.env.STELLAR_NETWORK === 'PUBLIC' ? 'https://horizon.stellar.org' : 'https://horizon-testnet.stellar.org'
 const server = new Server(horizon)
@@ -84,7 +85,7 @@ export default async (event, context) => {
         .minus(nativeBalance.buying_liabilities)
         .minus(nativeBalance.selling_liabilities)
         .minus(amount) // include a subtraction of any outstanding fees
-        .gte(100) // TODO: this number should probably be a TSS variable. Minimum value allowed in a sponsor account
+        .gte(100) // TODO: this number should probably be a Turret variable. Minimum value allowed in a sponsor account
       ) throw `Insufficient sponsorAccount balance`
     })
 
