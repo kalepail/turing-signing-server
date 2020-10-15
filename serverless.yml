@@ -3,7 +3,8 @@ app: turing-signing-server
 service: turing-signing-server-${opt:instance}
 
 plugins:
-  - serverless-iam-roles-per-function
+  # - serverless-iam-roles-per-function
+  - serverless-iamroles
   - serverless-webpack
   - serverless-offline
   - serverless-domain-manager
