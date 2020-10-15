@@ -27,12 +27,14 @@ export default async (event, context) => {
 
     const payList = chain(pendingList)
     .filter((txn) => {
-      const [time] = txn.split(':')
+      const [
+        time
+      ] = txn.split(':')
 
       if (moment.utc(parseInt(time), 'X').isBefore())
         return txn
     })
-    .take(100)
+    .take(100) // TODO: should be limiting off unique fee channels than this
     .value()
 
     if (payList.length) {

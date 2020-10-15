@@ -170,4 +170,5 @@ functions:
     iamRoleStatements: []
     maximumRetryAttempts: 0
     maximumRecordAgeInSeconds: 0
+    reservedConcurrency: 1
     timeout: 6

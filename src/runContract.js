@@ -11,8 +11,8 @@ import {
 } from 'lodash'
 import moment from 'moment'
 import BigNumber from 'bignumber.js'
-import { decode } from 'jsonwebtoken'
 import { bearer } from '@borderless/parse-authorization'
+import { JWK, JWT } from 'jose'
 
 import lambda from './js/lambda'
 import {
@@ -32,12 +32,24 @@ export default async (event, context) => {
   let pgClient
 
   try {
-    const AuthHeader = decode(bearer(event.headers['Authorization'] || event.headers['authorization']))
+    const jwt = bearer(event.headers['Authorization'] || event.headers['authorization'])
+    const {
+      sub: feeChannel,
+      aud: contractHashes
+    } = JWT.decode(jwt)
 
-    if (!AuthHeader)
-      throw 'Missing SEP-10 Authorization Bearer token'
+    // Ensure contract hash has been signed on for use of this fee channel
+    if (contractHashes.split(',').indexOf(event.pathParameters.hash) === -1)
+      throw `contractHash not permitted for feeChannel`
 
-    const { sub: feeChannel } = AuthHeader
+    const verifyKey = JWK.asKey({
+      kty: 'OKP',
+      crv: 'Ed25519',
+      x: Keypair.fromPublicKey(feeChannel).rawPublicKey().toString('base64')
+    })
+
+    // Verify jwt was signed for by the fee channel
+    JWT.verify(jwt, verifyKey)
 
     await server.loadAccount(feeChannel)
     .then(async ({signers, thresholds, balances}) => {
@@ -65,7 +77,7 @@ export default async (event, context) => {
         return amount
       })
 
-      const amount = BigNumber.sum(...amounts).toFixed(7)
+      const amount = amounts.length ? BigNumber.sum(...amounts).toFixed(7) : 0
 
       if (
         !new BigNumber(nativeBalance.balance)
@@ -76,6 +88,7 @@ export default async (event, context) => {
       ) throw `Insufficient feeChannel balance`
     })
 
+    // TODO: !! Ensure only one of these is ever running at a time otherwise we'll get double fee spends
     // Ensure this runs and completes async in a non-blocking manner. Should probably be run in a cron job
     lambda.invokeAsync({
       FunctionName: `${process.env.SERVICE_NAME}-dev-checkContractPrivate`,

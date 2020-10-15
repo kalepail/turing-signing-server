@@ -54,7 +54,7 @@
     "copy-webpack-plugin": "^6.1.0",
     "crypto": "^1.0.1",
     "fs": "0.0.1-security",
-    "jsonwebtoken": "^8.5.1",
+    "jose": "^2.0.2",
     "lodash": "^4.17.20",
     "moment": "^2.28.0",
     "pg": "^8.3.3",
