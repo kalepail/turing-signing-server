@@ -34,24 +34,24 @@ export default async (event, context) => {
   try {
     const jwt = bearer(event.headers['Authorization'] || event.headers['authorization'])
     const {
-      sub: feeChannel,
+      sub: sponsorAccount,
       aud: contractHashes
     } = JWT.decode(jwt)
 
-    // Ensure contract hash has been signed on for use of this fee channel
+    // Ensure contract hash has been signed on for use of this sponsor account
     if (contractHashes.split(',').indexOf(event.pathParameters.hash) === -1)
-      throw `contractHash not permitted for feeChannel`
+      throw `contractHash not permitted for sponsorAccount`
 
     const verifyKey = JWK.asKey({
       kty: 'OKP',
       crv: 'Ed25519',
-      x: Keypair.fromPublicKey(feeChannel).rawPublicKey().toString('base64')
+      x: Keypair.fromPublicKey(sponsorAccount).rawPublicKey().toString('base64')
     })
 
-    // Verify jwt was signed for by the fee channel
+    // Verify jwt was signed for by the sponsor account
     JWT.verify(jwt, verifyKey)
 
-    await server.loadAccount(feeChannel)
+    await server.loadAccount(sponsorAccount)
     .then(async ({signers, thresholds, balances}) => {
       const signer = find(signers, {key: process.env.TURRET_ADDRESS})
       const nativeBalance = find(balances, {asset_type: 'native'})
@@ -59,7 +59,7 @@ export default async (event, context) => {
       if (
         !signer
         || signer.weight > thresholds.med_threshold
-      ) throw `Invalid feeChannel`
+      ) throw `Turret isn't a medium threshold signer for this Sponsor`
 
       pgClient = await Pool.connect()
 
@@ -84,8 +84,8 @@ export default async (event, context) => {
         .minus(nativeBalance.buying_liabilities)
         .minus(nativeBalance.selling_liabilities)
         .minus(amount) // include a subtraction of any outstanding fees
-        .gte(100) // TODO: this number should probably be a TSS variable. Minimum value allowed in a feeChannel account
-      ) throw `Insufficient feeChannel balance`
+        .gte(100) // TODO: this number should probably be a TSS variable. Minimum value allowed in a sponsor account
+      ) throw `Insufficient sponsorAccount balance`
     })
 
     // TODO: !! Ensure only one of these is ever running at a time otherwise we'll get double fee spends
@@ -97,7 +97,7 @@ export default async (event, context) => {
       })
     }).send()
 
-    const prepayKey = `${moment.utc().add(1, 'minute').format('X')}:${feeChannel}:0.0005` // TODO: The amount here should be dynamic in some way
+    const prepayKey = `${moment.utc().add(1, 'minute').format('X')}:${sponsorAccount}:0.0005` // TODO: The amount here should be dynamic in some way
 
     await pgClient.query(`
       update contracts set

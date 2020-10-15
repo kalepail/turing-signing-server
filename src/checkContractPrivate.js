@@ -34,7 +34,7 @@ export default async (event, context) => {
       if (moment.utc(parseInt(time), 'X').isBefore())
         return txn
     })
-    .take(100) // TODO: should be limiting off unique fee channels than this
+    .take(100) // TODO: should be limiting off unique sponsor accounts rather than this
     .value()
 
     if (payList.length) {
