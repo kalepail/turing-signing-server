@@ -1,66 +1,69 @@
-import { TransactionBuilder, Networks, Asset, BASE_FEE, Operation, Server } from 'stellar-sdk'
+const { request } = require('https')
 
-const contract = 'GDXSAZSRHXCHVFHRETQSB5W7FEBUN3QAEEMNGCNUQWKDCEZBGLRHOQUO'
-// SATQWPXPT32UGFQUJDJ2KSVAVXEW5EHABONQRRX57K6NVFLC4DY7ZX7M
-// 8420b1e5efb5a3e1cee5624761ac54d8d4bbbff63e1382d9f5e1b9b28e9df9a5
+module.exports = (body) => new Promise((resolve, reject) => {
+  try {
+    body = JSON.stringify(body)
 
-const vault = 'GDBZX2QZ5MB4YO6J6OMMLRB52MIYRZFPWG4EINNDDLWLWUWQPZZ2ALZ4'
-// SAX45625LCFGLCAXDQTVUJIGYMJ7YN3EC2HMD7JZCFVRWMEDGUS47YDX
-const XLM = Asset.native()
-const TYLERCOIN = new Asset('TYLERCOIN', contract)
+    const options = {
+      hostname: 'tss-tylercoin-demo-afcb3fkuoltp.runkit.sh',
+      // hostname: 'runkit.io',
+      port: 443,
+      path: '/',
+      // path: '/tyvdh/demo-tss-contract/1.0.1',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': body.length,
+      },
+    }
 
-// Signers
-// GCBKJKN3XQSDDWB6YK7CHKFFJ3T4UV7IHRCO2XLZ5TWZPCIBJTQ6UUH7
-// GAP2ELXETCSJL4ATO2FZRU6D33WNGTC6VXKL3V2CIAYQ32W5PXFRECEK
-// GBTRPSAT6TIXCREHTLA77445DEW3ED55T6FGJVJ43ZCABNUUVKD23L3C
-// GAUZ6HSO6FQZ7F3FFZ2PWPPGMLJ3RJDHDVPJ6B5RNOTQXHP6V7P6AHJC
-// GBTSYFBPPTKAYGM2LM4SPDRAKIJFZ7Q3H3CMLBPVZDPIFWECAZBCCHZZ
+    const req = request(options, (res) => {
+      let data = ''
 
-// Ensure fees are acceptable (public contract could have raised them)
-// Only catch errors which Stellar won't already catch
-  // i.e. not_trusted, underfunded, etc.
+      if ( // Support for a single redirect to prove we're calling a version number not a branch for RunKit
+        res.headers.location
+        && (
+          res.statusCode === 301
+          || res.statusCode === 302
+          || res.statusCode === 307
+        )
+      ) {
+        const redirect = new URL(res.headers.location)
 
-// Fields
-// W3sibmFtZSI6InRvIiwidHlwZSI6InN0cmluZyIsImRlc2NyaXB0aW9uIjoiV2hlcmUgc2hvdWxkIHdlIHNlbmQgVFlMRVJDT0lOIHRvPyIsInJ1bGUiOiJNdXN0IGJlIGEgdmFsaWQgU3RlbGxhciBhZGRyZXNzIn0seyJuYW1lIjoic291cmNlIiwidHlwZSI6InN0cmluZyIsImRlc2NyaXB0aW9uIjoiV2hhdCdzIHRoZSBzb3VyY2UgYWNjb3VudCBmb3IgdGhpcyB0cmFuc2FjdGlvbj8iLCJydWxlIjoiTXVzdCBiZSBhIHZhbGlkIFN0ZWxsYXIgYWRkcmVzcywgb2Z0ZW4gdGhlIHNhbWUgYXMgdGhlIGB0b2AgYWRkcmVzcyJ9LHsibmFtZSI6ImFtb3VudCIsInR5cGUiOiJzdHJpbmciLCJkZXNjcmlwdGlvbiI6IlRZTEVSQ09JTiBpcyBwdXJjaGFzZWQgMToxIGZvciBYTE0uIEhvdyBtdWNoIGRvIHlvdSB3YW50IHRvIHBheSAmIHJlY2VpdmU/IiwicnVsZSI6Ik11c3QgYmUgYSB2YWxpZCBudW1lcmljYWwgYW1vdW50IGFib3ZlIGFueSBUU1Mgc2lnbmluZyBmZWUgZm9yIHRoaXMgY29udHJhY3QifV0=
+        options.hostname = redirect.hostname
+        options.path = '/'
 
-export default async ({request, signers}) => {
-  const server = new Server('https://horizon-testnet.stellar.org')
+        const red = request(options, (res) => {
+          let data = ''
 
-  const transaction = await server
-  .loadAccount(request.source)
-  .then((account) => {
-    return new TransactionBuilder(
-      account,
-      {
-        fee: BASE_FEE,
-        networkPassphrase: Networks.TESTNET
+          res.on('data', (chunk) => data += chunk)
+          res.on('end', () => {
+            if (res.statusCode >= 400)
+              reject(data)
+
+            resolve(data)
+          })
+        })
+
+        red.on('error', (err) => reject(err))
+        red.write(body)
+        red.end()
       }
-    )
-    .addOperation(Operation.payment({
-      destination: vault,
-      asset: XLM,
-      amount: request.amount
-    }))
-    .addOperation(Operation.changeTrust({
-      asset: TYLERCOIN
-    }))
-    .addOperation(Operation.payment({
-      destination: request.to,
-      asset: TYLERCOIN,
-      amount: request.amount,
-      source: contract
-    }))
-    .setTimeout(0)
-  })
 
-  for (const signer of signers) {
-    transaction.addOperation(Operation.payment({
-      destination: signer.turret,
-      asset: XLM,
-      amount: signer.fee,
-      source: contract
-    }))
-  }
+      else {
+        res.on('data', (chunk) => data += chunk)
+        res.on('end', () => {
+          if (res.statusCode >= 400)
+            reject(data)
 
-  return transaction.build().toXDR()
-}
+          resolve(data)
+        })
+      }
+    })
+
+    req.on('error', (err) => reject(err))
+    req.write(body)
+    req.end()
+  } catch (err) {reject(err)}
+})
+.catch((err) => {throw err})

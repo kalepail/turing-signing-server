@@ -1,68 +1,69 @@
-import { Transaction, Networks, Asset, BASE_FEE, Operation } from 'stellar-sdk'
-import BigNumber from 'bignumber.js'
+const { request } = require('https')
 
-// Contract
-// 07a6c7169d052aa2baa7bd9bdf0567d8c7bba9a1865a28ef228d9d50b0c7533d
-
-// Signers
-// GDZT5OYC3CDNR5UUUE4UYOD77F4K36HTQJ7UOOM3TT4KSK7KJGSKMG35
-// GDFFDGYFWBCJCE4FBLPRWC7FN3M2KLFAME5PZPR2RZHYXV6NBDJSM2J2
-// GDB3MBIOMZELTCJS2SOOJUQ2SK2FGU7KIQV46PRDFHWYKL5FU26LZRWB
-// GBLTRN6KYZLZ7TFCWWHY5OQWVQYYND72NIVQTUONFHRN45MYE7A2HEYA
-// GC57UORYZRVQSMJE5BRFCJUHWYWKXLOXOY76GOCXCVAAYC2KFC5ZIBPP
-
-// User
-// GD6U5IYKGWDVXDDFQ4NM7QTLH2S35RILOZ6EEVG5IGLLDJJSKN3KYZO7
-// SAUWQELGTL5BMAS3KEVSWYFXZB6QH4IHT4SNCMPXE35GFBKRWKYYDCPQ
-
-// Fields
-// W3sibmFtZSI6InhkciIsInR5cGUiOiJzdHJpbmciLCJkZXNjcmlwdGlvbiI6IlRyYW5zYWN0aW9uIGVudmVsb3BlIHlvdSdyZSBsb29raW5nIHRvIGdldCBzaWduZWQiLCJydWxlIjoiTXVzdCBiZSBhIHZhbGlkIFN0ZWxsYXIgWERSIHN0cmluZyJ9XQ==
-
-const XLM = Asset.native()
-
-async function contract ({request, signers}) {
+module.exports = (body) => new Promise((resolve, reject) => {
   try {
-    const transaction = new Transaction(request.xdr, Networks.TESTNET)
-    const op = transaction.operations[0]
-    const amount = new BigNumber(op.amount)
+    body = JSON.stringify(body)
 
-    if (
-      transaction.operations.length > 1
-      || op.type !== 'payment'
-      || !op.asset.equals(XLM)
-      || amount.gt(100)
-    ) throw 'Request rejected'
-
-    for (const signer of signers) {
-      const fee = new BigNumber(transaction._tx._attributes.fee)
-      const op = Operation.payment({
-        destination: signer.turret,
-        amount: signer.fee,
-        asset: XLM
-      })
-
-      transaction._tx._attributes.fee = fee.plus(BASE_FEE).toNumber()
-      transaction._tx._attributes.operations.push(op)
+    const options = {
+      hostname: 'tss-filter-demo-dk2vppn6tzix.runkit.sh',
+      // hostname: 'runkit.io',
+      port: 443,
+      path: '/',
+      // path: '/tyvdh/demo-tss-contract/1.0.1',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': body.length,
+      },
     }
 
-    return transaction.toXDR()
-  }
+    const req = request(options, (res) => {
+      let data = ''
 
-  catch(err) {
-    throw err
-  }
-}
+      if ( // Support for a single redirect to prove we're calling a version number not a branch for RunKit
+        res.headers.location
+        && (
+          res.statusCode === 301
+          || res.statusCode === 302
+          || res.statusCode === 307
+        )
+      ) {
+        const redirect = new URL(res.headers.location)
 
-export default contract
+        options.hostname = redirect.hostname
+        options.path = '/'
 
-// contract({request: {
-//   xdr: 'AAAAAMSS/PC7r1z0EXgvp+Y9zfZvYPUEFmUj9MufTe0a1qJZAAAAZAACNk4AAAADAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAAP5rMYsK+vSYqJzX+deNs42HunlbA9g1BAc90+YUmBDLAAAAAAAAAAA7msoAAAAAAAAAAAA='
-// }, signers: [{
-//   turret: 'GD6JDEASY6CV2OC3VANDZZTUWKFKRDNPX5SBXH4OPEKHOHPQWN6T657G',
-//   fee: '0.5'
-// },{
-//   turret: 'GD6JDEASY6CV2OC3VANDZZTUWKFKRDNPX5SBXH4OPEKHOHPQWN6T657G',
-//   fee: '0.5'
-// }]})
-// .then((data) => console.log(data))
-// .catch((err) => console.error(err))
+        const red = request(options, (res) => {
+          let data = ''
+
+          res.on('data', (chunk) => data += chunk)
+          res.on('end', () => {
+            if (res.statusCode >= 400)
+              reject(data)
+
+            resolve(data)
+          })
+        })
+
+        red.on('error', (err) => reject(err))
+        red.write(body)
+        red.end()
+      }
+
+      else {
+        res.on('data', (chunk) => data += chunk)
+        res.on('end', () => {
+          if (res.statusCode >= 400)
+            reject(data)
+
+          resolve(data)
+        })
+      }
+    })
+
+    req.on('error', (err) => reject(err))
+    req.write(body)
+    req.end()
+  } catch (err) {reject(err)}
+})
+.catch((err) => {throw err})

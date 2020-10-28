@@ -59,7 +59,7 @@ export default async (event, context) => {
 
       if (
         !signer
-        || signer.weight > thresholds.med_threshold
+        || thresholds.med_threshold > signer.weight
       ) throw `Turret isn't a medium threshold signer for this Sponsor`
 
       pgClient = await Pool.connect()
