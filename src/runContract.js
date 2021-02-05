@@ -3,7 +3,6 @@ import {
   Networks,
   Transaction,
   Server,
-  TransactionI,
   Asset,
 } from 'stellar-sdk'
 import {
@@ -28,6 +27,9 @@ import Pool from './js/pg'
 // GLOBAL TODO: pg Pools should be released even if there are errors
 // GLOBAL TODO: there are a few places where Network.TESTNET and testnet horizon is hardcoded
 
+// Is there any issue with a user submitting the same signed transaction hash to multiple turrets?
+  // I don't think so as the transaction hash isn't used to submit any payments but rather to permit the creation of a pooled transaction
+
 const horizon = process.env.STELLAR_NETWORK === 'PUBLIC' ? 'https://horizon.stellar.org' : 'https://horizon-testnet.stellar.org'
 const server = new Server(horizon)
 
@@ -37,25 +39,24 @@ export default async (event, context) => {
   let pgClient
 
   try {
-    const tomlBuffer = readFileSync('./stellar.toml')
-    const tomlString = tomlBuffer.toString()
-    const {TSS: {TURRETS: tomlTurrets}} = toml.parse(tomlString)
-
     // Sponsor Checks:
       // Account exists
       // Account has an acceptable balance
       // Account has added trusted Turret signers at acceptable weights
       // Account is in good historical standing
+    const tomlBuffer = readFileSync('./stellar.toml')
+    const tomlString = tomlBuffer.toString()
+    const {TSS: {TURRETS: tomlTurrets}} = toml.parse(tomlString)
 
+    // Fee Checks:
+      // source for op and source for txn are the same
+      // only two operations, one of type payment and one of type manageData
+      // memo is hash for contract
+      // fee is 0
+      // sequence # is 0
+      // timebounds min and max are 0
     let feeTxn = bearer(event.headers['Authorization'] || event.headers['authorization'])
         feeTxn = new Transaction(feeTxn, Networks[process.env.STELLAR_NETWORK])
-
-    // source for op and source for txn are the same
-    // only two operations, one of type payment and one of type manageData
-    // memo is hash for contract
-    // fee is 0
-    // sequence # is 0
-    // timebounds min and max are 0
 
     if(!(
       feeTxn.memo.value.toString('hex') === event.pathParameters.hash
