@@ -2,7 +2,7 @@ import {
   Keypair,
   Networks,
   Transaction,
-  Server,
+  // Server,
 } from 'stellar-sdk'
 import {
   get,
