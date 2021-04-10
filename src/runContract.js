@@ -89,25 +89,66 @@ export default async (event, context) => {
 
     // If a returned XDR has already been submitted throw an error, otherwise we open up a looping vulnerability
 
-    if (!event.headers['X-Turrets'])
-      throw 'Mising X-Turrets header'
+    // TODO: Add an alternative validation method similar to the upload contract payment requirement
 
-    const healthySigners = await Promise.map(uniq([
-      process.env.TURRET_ADDRESS,
-      ...event.headers['X-Turrets'].split(',')
-    ]),
-      async (turret) => server
-      .loadAccount(turret)
-      .then((account) => axios
-        .get(`${tssRoute(account)}/contract/${event.pathParameters.hash}`)
-        .then(async ({data}) => data)
-        .catch(() => null)
+    const contractBody = {
+      request: JSON.parse(event.body),
+      signers: []
+    }
+
+    const PaymentHeader = event.headers['X-Payment'] || event.headers['x-payment']
+    const TurretsHeader = event.headers['X-Turrets'] || event.headers['x-turrets']
+
+    if (PaymentHeader) {
+      const transaction = new Transaction(PaymentHeader, Networks[process.env.STELLAR_NETWORK])
+      const hash = transaction.hash().toString('hex')
+
+      if (!find(transaction._operations, {
+        type: 'payment',
+        destination: process.env.TURRET_ADDRESS,
+        amount: new BigNumber(process.env.TURRET_RUN_FEE).toFixed(7),
+        asset: Asset.native()
+      })) throw 'Missing or invalid fee payment'
+
+      await server
+      .transactions()
+      .transaction(hash)
+      .call()
+      .catch((err) => {
+        if (
+          err.response
+          && err.response.status === 404
+        ) return
+
+        else if (err.response)
+          throw err
+
+        throw 'Transaction has already been submitted'
+      })
+
+      await server.submitTransaction(transaction)
+    }
+
+    else if (TurretsHeader) {
+      contractBody.signers = await Promise.map(uniq([
+        process.env.TURRET_ADDRESS,
+        ...TurretsHeader.split(',')
+      ]),
+        async (turret) => server
+        .loadAccount(turret)
+        .then((account) => axios
+          .get(`${tssRoute(account)}/contract/${event.pathParameters.hash}`)
+          .then(async ({data}) => data)
+          .catch(() => null)
+        )
+      ).then((signers) => chain(signers)
+        .compact()
+        .orderBy(['turret', 'signer', 'fee'], 'desc')
+        .value()
       )
-    ).then((signers) => chain(signers)
-      .compact()
-      .orderBy(['turret', 'signer', 'fee'], 'desc')
-      .value()
-    )
+    }
+
+    else throw 'Cannot run without either an X-Turrets or X-Payment header'
 
     const xdr = await lambda.invoke({
       FunctionName: `${process.env.SERVICE_NAME}-dev-runContractPrivate`,
@@ -115,10 +156,7 @@ export default async (event, context) => {
       LogType: 'None',
       Payload: JSON.stringify({
         hash: event.pathParameters.hash,
-        body: {
-          request: JSON.parse(event.body),
-          signers: healthySigners
-        }
+        body: contractBody
       })
     }).promise()
     .then(({Payload}) => {
@@ -131,31 +169,36 @@ export default async (event, context) => {
     })
 
     const transaction = new Transaction(xdr, Networks[process.env.STELLAR_NETWORK])
-    const hash = transaction.hash().toString('hex')
 
-    if (!find(transaction._operations, {
-      type: 'payment',
-      destination: process.env.TURRET_ADDRESS,
-      amount: new BigNumber(process.env.TURRET_RUN_FEE).toFixed(7),
-      asset: Asset.native()
-    })) throw 'Missing or invalid fee payment'
+    if (
+      !PaymentHeader
+      && TurretsHeader
+    ) {
+      const hash = transaction.hash().toString('hex')
 
-    await server
-    .transactions()
-    .transaction(hash)
-    .call()
-    .catch((err) => err)
-    .then((err) => {
-      if (
-        err.response
-        && err.response.status === 404
-      ) return
+      if (!find(transaction._operations, {
+        type: 'payment',
+        destination: process.env.TURRET_ADDRESS,
+        amount: new BigNumber(process.env.TURRET_RUN_FEE).toFixed(7),
+        asset: Asset.native()
+      })) throw 'Missing or invalid fee payment'
 
-      else if (err.response)
-        throw err
+      await server
+      .transactions()
+      .transaction(hash)
+      .call()
+      .catch((err) => {
+        if (
+          err.response
+          && err.response.status === 404
+        ) return
 
-      throw 'Transaction has already been submitted'
-    })
+        else if (err.response)
+          throw err
+
+        throw 'Transaction has already been submitted'
+      })
+    }
 
     const pgClientUpdate = await Pool.connect()
 
