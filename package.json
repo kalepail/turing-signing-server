@@ -53,7 +53,7 @@
     "copy-webpack-plugin": "^6.1.0",
     "crypto": "^1.0.1",
     "fs": "0.0.1-security",
-    "lodash": "^4.17.20",
+    "lodash": "^4.17.21",
     "moment": "^2.28.0",
     "pg": "^8.3.3",
     "require-from-string": "^2.0.2",
