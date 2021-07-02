@@ -60,7 +60,7 @@
     "seedrandom": "^3.0.5",
     "sha.js": "^2.4.11",
     "source-map-support": "^0.5.19",
-    "stellar-sdk": "^5.0.4",
+    "stellar-sdk": "^8.2.3",
     "toml": "^3.0.0"
   }
 }
