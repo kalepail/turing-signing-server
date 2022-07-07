@@ -54,7 +54,7 @@
     "crypto": "^1.0.1",
     "fs": "0.0.1-security",
     "lodash": "^4.17.20",
-    "moment": "^2.28.0",
+    "moment": "^2.29.4",
     "pg": "^8.3.3",
     "require-from-string": "^2.0.2",
     "seedrandom": "^3.0.5",
